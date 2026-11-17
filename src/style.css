@@ -418,12 +418,6 @@ textarea {
 .teks-hijau {
   color: var(--hijau);
 }
-.teks-oranye {
-  color: var(--oranye);
-}
-.teks-kuning {
-  color: var(--kuning-status);
-}
 
 /* --- Timer --- */
 
@@ -622,9 +616,36 @@ pre.isi-artefak {
 }
 
 .peta-node:hover .peta-kotak,
-.peta-node:focus-visible .peta-kotak {
+.peta-node:focus-visible .peta-kotak,
+.peta-node.sorot .peta-kotak,
+.peta-node.dipilih .peta-kotak {
   stroke: var(--accent);
   stroke-width: 2;
+}
+
+/* Interaksi peta: transisi sorot/redup hanya bila gerakan aktif
+ * (hook useGerakanAktif); media query reduced-motion di bawah tetap
+ * menjadi jaring pengaman. */
+.gerakan-aktif .peta-node,
+.gerakan-aktif .peta-edge {
+  transition:
+    opacity 0.25s ease,
+    stroke-width 0.25s ease;
+}
+
+.peta-node.redup,
+.peta-edge.redup {
+  opacity: 0.25;
+}
+
+.peta-edge.terkait {
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.peta-node.tersembunyi,
+.peta-edge.tersembunyi {
+  display: none;
 }
 
 .peta-label {

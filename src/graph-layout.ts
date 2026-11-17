@@ -860,3 +860,139 @@ export function hitungLayout(
     edges: edgesLayout,
   };
 }
+
+/**
+ * Interaksi Peta (inspirasi CourseViz): traversal graf murni untuk sorot
+ * hover/pilih dan mode "Lihat jalur". Tanpa dependensi browser, dites di
+ * tests/graph-layout.test.ts.
+ */
+
+/** Field edge yang dipakai traversal (Edge domain maupun EdgeTataLetak). */
+export type EdgeGraf = Pick<Edge, 'dari' | 'ke' | 'tipe'>;
+
+/** Tetangga satu node lewat edge tipe apa pun, dua arah. */
+export function tetangga(
+  edges: readonly EdgeGraf[],
+  id: string,
+): Set<string> {
+  const hasil = new Set<string>();
+  for (const e of edges) {
+    if (e.dari === id) hasil.add(e.ke);
+    else if (e.ke === id) hasil.add(e.dari);
+  }
+  return hasil;
+}
+
+/**
+ * Transitive closure sepanjang edge PRASYARAT saja, dua arah.
+ * `sebelum`: framework yang harus dipelajari dulu (transitif);
+ * `sesudah`: framework yang terbuka sesudahnya (transitif).
+ * Tahan siklus: node yang sudah dikunjungi tidak diproses lagi
+ * (graph seharusnya DAG, tapi kodenya tidak mengasumsikan itu).
+ */
+export function jalurPrasyarat(
+  edges: readonly EdgeGraf[],
+  id: string,
+): { sebelum: Set<string>; sesudah: Set<string> } {
+  const prasyarat = edges.filter((e) => e.tipe === 'prasyarat');
+  const jalan = (mundur: boolean): Set<string> => {
+    const ketemu = new Set<string>();
+    const dikunjungi = new Set([id]);
+    const antre = [id];
+    while (antre.length > 0) {
+      const cur = antre.pop()!;
+      for (const e of prasyarat) {
+        const tetanggaId = mundur
+          ? e.ke === cur
+            ? e.dari
+            : null
+          : e.dari === cur
+            ? e.ke
+            : null;
+        if (tetanggaId !== null && !dikunjungi.has(tetanggaId)) {
+          dikunjungi.add(tetanggaId);
+          ketemu.add(tetanggaId);
+          antre.push(tetanggaId);
+        }
+      }
+    }
+    return ketemu;
+  };
+  return { sebelum: jalan(true), sesudah: jalan(false) };
+}
+
+/** Keadaan visual tiap node/edge untuk satu hover/pilihan. */
+export interface KeadaanPeta {
+  /** Node ber-outline: fokus (hover diutamakan) + tetangganya. */
+  sorot: Set<string>;
+  /** Node meredup: tidak terkait pilihan (kosong tanpa pilihan). */
+  redup: Set<string>;
+  /** Node disembunyikan: mode jalur, di luar closure prasyarat. */
+  sembunyi: Set<string>;
+  /** Indeks edge yang menebal: insiden ke fokus. */
+  edgeTerkait: Set<number>;
+  /** Indeks edge yang meredup: tidak insiden ke pilihan. */
+  edgeRedup: Set<number>;
+  /** Indeks edge yang disembunyikan: mode jalur, bukan jalur prasyarat. */
+  edgeSembunyi: Set<number>;
+}
+
+/**
+ * Turunkan keadaan visual peta dari hover/pilihan/mode. Aturan:
+ * - Fokus sorot = node hover bila ada, bila tidak node pilihan.
+ * - Pilihan meredupkan node/edge yang tidak terkait (tipe apa pun);
+ *   yang disorot tidak pernah meredup.
+ * - Mode jalur hanya menampilkan closure prasyarat pilihan (dua arah)
+ *   beserta edge prasyarat antar node closure; sisanya disembunyikan.
+ */
+export function keadaanPeta(
+  layout: TataLetakGraf,
+  hoverId: string | null,
+  dipilihId: string | null,
+  modeJalur: boolean,
+): KeadaanPeta {
+  const sorot = new Set<string>();
+  const redup = new Set<string>();
+  const sembunyi = new Set<string>();
+  const edgeTerkait = new Set<number>();
+  const edgeRedup = new Set<number>();
+  const edgeSembunyi = new Set<number>();
+  const fokus = hoverId ?? dipilihId;
+  if (fokus !== null) {
+    sorot.add(fokus);
+    for (const t of tetangga(layout.edges, fokus)) sorot.add(t);
+    layout.edges.forEach((e, i) => {
+      if (e.dari === fokus || e.ke === fokus) edgeTerkait.add(i);
+    });
+  }
+  if (dipilihId !== null && !modeJalur) {
+    const terkait = new Set([dipilihId, ...tetangga(layout.edges, dipilihId)]);
+    for (const n of layout.nodes) {
+      if (!terkait.has(n.id) && !sorot.has(n.id)) redup.add(n.id);
+    }
+    layout.edges.forEach((e, i) => {
+      if (
+        !edgeTerkait.has(i) &&
+        e.dari !== dipilihId &&
+        e.ke !== dipilihId
+      ) {
+        edgeRedup.add(i);
+      }
+    });
+  }
+  if (dipilihId !== null && modeJalur) {
+    const { sebelum, sesudah } = jalurPrasyarat(layout.edges, dipilihId);
+    const tampil = new Set([dipilihId, ...sebelum, ...sesudah]);
+    for (const n of layout.nodes) {
+      if (!tampil.has(n.id)) sembunyi.add(n.id);
+    }
+    layout.edges.forEach((e, i) => {
+      if (
+        !(e.tipe === 'prasyarat' && tampil.has(e.dari) && tampil.has(e.ke))
+      ) {
+        edgeSembunyi.add(i);
+      }
+    });
+  }
+  return { sorot, redup, sembunyi, edgeTerkait, edgeRedup, edgeSembunyi };
+}

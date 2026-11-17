@@ -17,7 +17,10 @@ import {
   TINGGI_NODE,
   bungkusLabel,
   hitungLayout,
+  jalurPrasyarat,
+  keadaanPeta,
   labelNode,
+  tetangga,
 } from '../src/graph-layout';
 import { buatFramework } from './factories';
 
@@ -670,5 +673,160 @@ describe('label node', () => {
       expect(n.lebar).toBe(LEBAR_NODE);
       expect(n.tinggi).toBe(TINGGI_NODE);
     }
+  });
+});
+
+describe('tetangga: tetangga lewat semua tipe edge', () => {
+  it('tetangga dua arah, semua tipe (vrio: value-chain + core-competencies)', () => {
+    expect([...tetangga(graph.edges, 'vrio')].sort()).toEqual([
+      'core-competencies',
+      'value-chain',
+    ]);
+  });
+
+  it('tetangga pestel: porter-5f + ansoff (prasyarat dan satu_tema)', () => {
+    expect([...tetangga(graph.edges, 'pestel')].sort()).toEqual([
+      'ansoff',
+      'porter-5f',
+    ]);
+  });
+
+  it('node tanpa edge tidak punya tetangga', () => {
+    expect(tetangga([], 'pestel').size).toBe(0);
+    expect(
+      tetangga([{ dari: 'a', ke: 'b', tipe: 'satu_tema' }], 'pestel').size,
+    ).toBe(0);
+  });
+});
+
+describe('jalurPrasyarat: transitive closure prasyarat', () => {
+  it('rantai transitif dua arah (data nyata: value-chain → vrio → core-competencies)', () => {
+    expect(jalurPrasyarat(graph.edges, 'core-competencies')).toEqual({
+      sebelum: new Set(['vrio', 'value-chain']),
+      sesudah: new Set(),
+    });
+    expect(jalurPrasyarat(graph.edges, 'value-chain')).toEqual({
+      sebelum: new Set(),
+      sesudah: new Set(['vrio', 'core-competencies']),
+    });
+    expect(jalurPrasyarat(graph.edges, 'vrio')).toEqual({
+      sebelum: new Set(['value-chain']),
+      sesudah: new Set(['core-competencies']),
+    });
+  });
+
+  it('rantai satu langkah (pestel → porter-5f)', () => {
+    expect(jalurPrasyarat(graph.edges, 'pestel')).toEqual({
+      sebelum: new Set(),
+      sesudah: new Set(['porter-5f']),
+    });
+    expect(jalurPrasyarat(graph.edges, 'porter-5f')).toEqual({
+      sebelum: new Set(['pestel']),
+      sesudah: new Set(),
+    });
+  });
+
+  it('hanya edge prasyarat yang diikuti, tipe lain diabaikan', () => {
+    const edges = [
+      { dari: 'a', ke: 'b', tipe: 'satu_tema' },
+      { dari: 'a', ke: 'c', tipe: 'prasyarat' },
+      { dari: 'c', ke: 'd', tipe: 'dipakai_bersama' },
+    ] as const;
+    expect(jalurPrasyarat(edges, 'a')).toEqual({
+      sebelum: new Set(),
+      sesudah: new Set(['c']),
+    });
+  });
+
+  it('tahan siklus: a → b → c → a + a → d berhenti dan lengkap', () => {
+    const edges = [
+      { dari: 'a', ke: 'b', tipe: 'prasyarat' },
+      { dari: 'b', ke: 'c', tipe: 'prasyarat' },
+      { dari: 'c', ke: 'a', tipe: 'prasyarat' },
+      { dari: 'a', ke: 'd', tipe: 'prasyarat' },
+    ] as const;
+    expect(jalurPrasyarat(edges, 'a')).toEqual({
+      sebelum: new Set(['b', 'c']),
+      sesudah: new Set(['b', 'c', 'd']),
+    });
+    // Node awal tidak pernah masuk himpunannya sendiri.
+    expect(jalurPrasyarat(edges, 'a').sebelum.has('a')).toBe(false);
+    expect(jalurPrasyarat(edges, 'a').sesudah.has('a')).toBe(false);
+  });
+
+  it('node yang tidak ada di graph: kedua himpunan kosong', () => {
+    expect(jalurPrasyarat(graph.edges, 'tidak-ada')).toEqual({
+      sebelum: new Set(),
+      sesudah: new Set(),
+    });
+  });
+});
+
+describe('keadaanPeta: sorot, redup, mode jalur', () => {
+  it('tanpa hover/pilihan: semua himpunan kosong', () => {
+    expect(keadaanPeta(layout, null, null, false)).toEqual({
+      sorot: new Set(),
+      redup: new Set(),
+      sembunyi: new Set(),
+      edgeTerkait: new Set(),
+      edgeRedup: new Set(),
+      edgeSembunyi: new Set(),
+    });
+  });
+
+  it('hover saja: sorot fokus + tetangga, tanpa redup', () => {
+    const k = keadaanPeta(layout, 'vrio', null, false);
+    expect(k.sorot).toEqual(
+      new Set(['vrio', 'value-chain', 'core-competencies']),
+    );
+    // 4 edge insiden vrio (2 prasyarat + 2 satu_tema paralel).
+    expect(k.edgeTerkait.size).toBe(4);
+    expect(k.redup.size).toBe(0);
+    expect(k.edgeRedup.size).toBe(0);
+    expect(k.sembunyi.size).toBe(0);
+    expect(k.edgeSembunyi.size).toBe(0);
+  });
+
+  it('pilihan saja: yang tidak terkait meredup', () => {
+    const k = keadaanPeta(layout, null, 'vrio', false);
+    expect(k.sorot).toEqual(
+      new Set(['vrio', 'value-chain', 'core-competencies']),
+    );
+    expect(k.edgeTerkait.size).toBe(4);
+    // 22 node − 3 terkait = 19 meredup; 35 edge − 4 insiden = 31 meredup.
+    expect(k.redup.size).toBe(19);
+    expect(k.edgeRedup.size).toBe(31);
+    expect(k.sembunyi.size).toBe(0);
+    expect(k.edgeSembunyi.size).toBe(0);
+  });
+
+  it('hover mengalahkan pilihan untuk sorot, redup tetap mengikuti pilihan', () => {
+    const k = keadaanPeta(layout, 'pestel', 'vrio', false);
+    expect(k.sorot).toEqual(new Set(['pestel', 'porter-5f', 'ansoff']));
+    // Sorot (3) tidak meredup meski bukan tetangga pilihan: 22 − 3 − 3 = 16.
+    expect(k.redup.size).toBe(16);
+    // Edge terkait mengikuti hover (3 edge pestel); edge redup 35 − 4 − 3 = 28.
+    expect(k.edgeTerkait.size).toBe(3);
+    expect(k.edgeRedup.size).toBe(28);
+  });
+
+  it('mode jalur: hanya closure prasyarat yang tampil', () => {
+    const k = keadaanPeta(layout, null, 'core-competencies', true);
+    // Tampil: core-competencies + vrio + value-chain; 19 node disembunyikan.
+    expect(k.sembunyi.size).toBe(19);
+    expect(k.sembunyi.has('core-competencies')).toBe(false);
+    expect(k.sembunyi.has('vrio')).toBe(false);
+    expect(k.sembunyi.has('value-chain')).toBe(false);
+    // Tampil hanya 2 edge prasyarat antar node closure; 33 disembunyikan.
+    expect(k.edgeSembunyi.size).toBe(33);
+    // Mode jalur tidak meredupkan (yang tidak tampil disembunyikan).
+    expect(k.redup.size).toBe(0);
+    expect(k.edgeRedup.size).toBe(0);
+  });
+
+  it('mode jalur tanpa pilihan: tidak ada yang disembunyikan', () => {
+    const k = keadaanPeta(layout, null, null, true);
+    expect(k.sembunyi.size).toBe(0);
+    expect(k.edgeSembunyi.size).toBe(0);
   });
 });

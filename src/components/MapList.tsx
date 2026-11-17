@@ -20,8 +20,8 @@ export function MapList(): React.JSX.Element {
     <div>
       <h1>Peta framework</h1>
       <p className="muted">
-        Pustaka framework, bukan urutan belajar. Klik node di peta untuk
-        melihat detail, 3 lapis konten, dan statusnya.
+        Pustaka framework, bukan urutan belajar. Klik node untuk memilihnya
+        dan melihat prasyarat serta tautan ke detail.
       </p>
       <p className="muted kecil catatan-peta-kecil">
         Peta grafik hanya tampil di layar lebar. Daftar di bawah ini lengkap.
