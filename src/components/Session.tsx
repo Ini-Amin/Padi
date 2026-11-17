@@ -1,0 +1,444 @@
+/**
+ * Layar Sesi + Layar Penilaian (dokumen 04 §3.2) — dua tahap terpisah.
+ * Timer berbasis delta Date.now() (interval 1 detik + autosave 30 detik).
+ * Sesi re-use meminta masalah BARU dan tidak menampilkan catatan lama
+ * (retrieval practice, Prinsip 5a).
+ */
+import { useEffect, useRef, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db, selesaikanSesi } from '../db';
+import { usePadiStore } from '../store';
+import type { Artefak, ISODate, Skor } from '../domain';
+import { formatTanggal } from '../dates';
+import { RUBRIK } from '../rubrik';
+import { jenisArtefakDefault } from '../onboarding';
+import { labelJenisSesi, perluPilihMasalah } from '../sesi';
+import { navigasi } from '../App';
+
+const JENIS_ARTEFAK: Array<{ nilai: Artefak['jenis']; label: string }> = [
+  { nilai: 'teks', label: 'Teks' },
+  { nilai: 'diagram', label: 'Diagram (deskripsi teks)' },
+  { nilai: 'memo', label: 'Memo' },
+  { nilai: 'analisis_perusahaan', label: 'Analisis perusahaan' },
+];
+
+type Tahap = 'pilih-masalah' | 'sesi' | 'nilai' | 'selesai';
+
+export function Session({ id, reuseId }: { id: string; reuseId: string | null }): React.JSX.Element {
+  const sesi = useLiveQuery(() => db.sesi.get(id), [id]);
+  const framework = useLiveQuery(
+    () => (sesi ? db.frameworks.get(sesi.framework_id) : undefined),
+    [sesi?.framework_id],
+  );
+  const masalahSesi = useLiveQuery(
+    () => (sesi?.masalah_id ? db.masalah.get(sesi.masalah_id) : undefined),
+    [sesi?.masalah_id],
+  );
+  const semuaMasalah = useLiveQuery(() => db.masalah.toArray(), []);
+  const pemakaianFramework = useLiveQuery(
+    () => (sesi ? db.pemakaian.where('framework_id').equals(sesi.framework_id).toArray() : []),
+    [sesi?.framework_id],
+  );
+
+  const [tahap, setTahap] = useState<Tahap>('sesi');
+  const [elapsedDetik, setElapsedDetik] = useState<number | null>(null);
+  const [berjalan, setBerjalan] = useState(false);
+  const [catatan, setCatatan] = useState<string | null>(null);
+  const [skor, setSkor] = useState<Skor | null>(null);
+  const [adaArtefak, setAdaArtefak] = useState(false);
+  const [judulArtefak, setJudulArtefak] = useState('');
+  const [isiArtefak, setIsiArtefak] = useState('');
+  // Jenis artefak default dari jawaban onboarding Q4 (bisa diubah di form).
+  const [jenisArtefak, setJenisArtefak] = useState<Artefak['jenis']>(() =>
+    jenisArtefakDefault(usePadiStore.getState().onboarding.membosankan),
+  );
+  const [kLengkap, setKLengkap] = useState(false);
+  const [kPrioritasi, setKPrioritasi] = useState(false);
+  const [kRekomendasi, setKRekomendasi] = useState(false);
+  const [reuseBerikutnya, setReuseBerikutnya] = useState<ISODate | null>(null);
+  const [menyimpan, setMenyimpan] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const elapsedRef = useRef(0);
+  const catatanRef = useRef('');
+
+  // Inisialisasi sekali saat sesi dimuat.
+  useEffect(() => {
+    if (!sesi) return;
+    if (perluPilihMasalah(sesi.jenis, sesi.masalah_id)) {
+      setTahap((t) => (t === 'sesi' ? 'pilih-masalah' : t));
+    }
+    if (elapsedDetik === null) {
+      elapsedRef.current = sesi.durasi_menit * 60;
+      setElapsedDetik(sesi.durasi_menit * 60);
+    }
+    if (catatan === null) {
+      catatanRef.current = sesi.catatan;
+      setCatatan(sesi.catatan);
+    }
+  }, [sesi, elapsedDetik, catatan]);
+
+  // Detak timer.
+  useEffect(() => {
+    if (!berjalan) return;
+    const t = setInterval(() => {
+      elapsedRef.current += 1;
+      setElapsedDetik(elapsedRef.current);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [berjalan]);
+
+  // Autosave catatan + durasi tiap 30 detik saat timer berjalan.
+  useEffect(() => {
+    if (!berjalan) return;
+    const t = setInterval(() => {
+      void db.sesi.update(id, {
+        catatan: catatanRef.current,
+        durasi_menit: Math.floor(elapsedRef.current / 60),
+      });
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [berjalan, id]);
+
+  // Simpan saat komponen dilepas (tab ditutup / pindah layar).
+  useEffect(() => {
+    return () => {
+      void db.sesi.update(id, {
+        catatan: catatanRef.current,
+        durasi_menit: Math.floor(elapsedRef.current / 60),
+      });
+    };
+  }, [id]);
+
+  if (sesi === undefined || framework === undefined || semuaMasalah === undefined) {
+    return <p className="muted">Memuat…</p>;
+  }
+  if (!sesi) return <p>Sesi tidak ditemukan.</p>;
+  if (!framework) return <p>Framework tidak ditemukan.</p>;
+  if (sesi.selesai && tahap !== 'selesai') {
+    return (
+      <div>
+        <p>Sesi ini sudah selesai dinilai.</p>
+        <a className="tombol-garis" href="#/">
+          Kembali ke Beranda
+        </a>
+      </div>
+    );
+  }
+
+  const targetDetik = sesi.durasi_target_menit * 60;
+  const sisa = Math.max(0, targetDetik - (elapsedDetik ?? 0));
+  const menit = Math.floor(sisa / 60);
+  const detik = sisa % 60;
+  const waktuHabis = (elapsedDetik ?? 0) >= targetDetik;
+
+  const jeda = async (): Promise<void> => {
+    setBerjalan(false);
+    await db.sesi.update(id, {
+      catatan: catatanRef.current,
+      durasi_menit: Math.floor(elapsedRef.current / 60),
+    });
+  };
+
+  const pilihMasalahReuse = async (masalahId: string): Promise<void> => {
+    await db.sesi.update(id, { masalah_id: masalahId });
+    setTahap('sesi');
+  };
+
+  const kePenilaian = async (): Promise<void> => {
+    await jeda();
+    setTahap('nilai');
+  };
+
+  const kirimPenilaian = async (): Promise<void> => {
+    if (skor === null || menyimpan) return;
+    if (adaArtefak && (judulArtefak.trim().length === 0 || isiArtefak.trim().length === 0)) {
+      setError('Artefak butuh judul dan isi.');
+      return;
+    }
+    setMenyimpan(true);
+    setError(null);
+    try {
+      const durasiMenit = Math.floor(elapsedRef.current / 60);
+      const hasil = await selesaikanSesi(id, durasiMenit, {
+        skor,
+        artefak: adaArtefak
+          ? {
+              judul: judulArtefak,
+              isi: isiArtefak,
+              jenis: jenisArtefak,
+              kualitas_lengkap: kLengkap,
+              kualitas_prioritasi: kPrioritasi,
+              kualitas_rekomendasi: kRekomendasi,
+            }
+          : undefined,
+        jadwal_reuse_id: reuseId ?? undefined,
+      });
+      setReuseBerikutnya(hasil.reuseBerikutnya);
+      setTahap('selesai');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Tidak bisa menyimpan penilaian.');
+    } finally {
+      setMenyimpan(false);
+    }
+  };
+
+  // --- Tahap pilih masalah (re-use) ---
+  if (tahap === 'pilih-masalah') {
+    const sudahDipakai = new Set((pemakaianFramework ?? []).map((p) => p.masalah_id));
+    const kandidat = (semuaMasalah ?? []).filter(
+      (m) => m.status === 'aktif' && !sudahDipakai.has(m.id),
+    );
+    return (
+      <div>
+        <h1>Pakai {framework.nama} untuk masalah lain</h1>
+        <p className="muted">
+          {labelJenisSesi(sesi.jenis)} menguji penguasaanmu: terapkan framework
+          ini ke masalah yang belum pernah memakai framework ini. Catatan lama
+          tidak ditampilkan — kerjakan dari ingatan.
+        </p>
+        {kandidat.length === 0 ? (
+          <p>
+            Semua masalah aktifmu sudah pernah memakai {framework.nama}. Nyatakan
+            masalah baru untuk re-use ini.
+          </p>
+        ) : (
+          kandidat.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className="pilihan"
+              onClick={() => void pilihMasalahReuse(m.id)}
+            >
+              {m.judul}
+            </button>
+          ))
+        )}
+        <div className="baris-tombol">
+          <a className="tombol-garis" href="#/masalah/baru">
+            Nyatakan masalah baru
+          </a>
+          <a className="tombol-teks" href="#/">
+            Batal
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Tahap selesai (konfirmasi) ---
+  if (tahap === 'selesai') {
+    return (
+      <div>
+        <h1>{labelJenisSesi(sesi.jenis)} selesai.</h1>
+        {reuseBerikutnya ? (
+          <p>
+            Re-use berikutnya: {formatTanggal(reuseBerikutnya)} — pakai{' '}
+            {framework.nama} untuk masalah lain.
+          </p>
+        ) : (
+          <p>Tidak ada re-use berikutnya yang terjadwal.</p>
+        )}
+        <div className="baris-tombol">
+          <a className="tombol-utama" href="#/">
+            Kembali ke Beranda
+          </a>
+          {sesi.jenis === 'catch_up' && (
+            <a className="tombol-garis" href="#/catch-up">
+              Kembali ke Catch-up
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Tahap penilaian ---
+  if (tahap === 'nilai') {
+    return (
+      <div>
+        <h1>Nilai sesi ini</h1>
+        <p className="muted">
+          {framework.nama} · {masalahSesi?.judul ?? ''} ·{' '}
+          {Math.floor(elapsedRef.current / 60)} menit
+        </p>
+
+        <h2>Apakah sesi ini menghasilkan artefak?</h2>
+        <label className="cek">
+          <input
+            type="checkbox"
+            checked={adaArtefak}
+            onChange={(e) => setAdaArtefak(e.target.checked)}
+          />
+          <span>Ya, ada artefak yang dihasilkan.</span>
+        </label>
+        {adaArtefak && (
+          <>
+            <label htmlFor="judul-artefak">Judul artefak</label>
+            <input
+              id="judul-artefak"
+              type="text"
+              value={judulArtefak}
+              onChange={(e) => setJudulArtefak(e.target.value)}
+              placeholder="Misal: Analisis PESTEL untuk segmen pelajar"
+            />
+            <label htmlFor="jenis-artefak">Jenis artefak</label>
+            <select
+              id="jenis-artefak"
+              value={jenisArtefak}
+              onChange={(e) => setJenisArtefak(e.target.value as Artefak['jenis'])}
+            >
+              {JENIS_ARTEFAK.map((j) => (
+                <option key={j.nilai} value={j.nilai}>
+                  {j.label}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="isi-artefak">Isi artefak (Markdown)</label>
+            <textarea
+              id="isi-artefak"
+              value={isiArtefak}
+              onChange={(e) => setIsiArtefak(e.target.value)}
+              placeholder="Tulis penerapan framework ke masalahmu di sini."
+            />
+            <h3>Checklist kualitas</h3>
+            <p className="muted kecil">
+              Artefak yang memenuhi ketiganya ditandai "berkualitas" — salah satu
+              syarat "dikuasai".
+            </p>
+            <label className="cek">
+              <input type="checkbox" checked={kLengkap} onChange={(e) => setKLengkap(e.target.checked)} />
+              <span>Lengkap — semua elemen framework terisi.</span>
+            </label>
+            <label className="cek">
+              <input type="checkbox" checked={kPrioritasi} onChange={(e) => setKPrioritasi(e.target.checked)} />
+              <span>Ada prioritasi — temuan diurutkan/diutamakan, bukan sekadar daftar.</span>
+            </label>
+            <label className="cek">
+              <input type="checkbox" checked={kRekomendasi} onChange={(e) => setKRekomendasi(e.target.checked)} />
+              <span>Ada rekomendasi — minimal 1 rekomendasi konkret.</span>
+            </label>
+          </>
+        )}
+
+        <h2>Seberapa jauh kamu bisa menerapkan?</h2>
+        {RUBRIK.map((r) => (
+          <div
+            key={r.skor}
+            className={`rubrik${skor === r.skor ? ' terpilih' : ''}`}
+            onClick={() => setSkor(r.skor)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setSkor(r.skor);
+            }}
+          >
+            <span className="skor">{r.skor} — {r.judul}</span>
+            <p className="muted">{r.arti}</p>
+          </div>
+        ))}
+
+        {error && <div className="pesan-error">{error}</div>}
+        <div className="baris-tombol">
+          <button
+            className="tombol-utama"
+            type="button"
+            disabled={skor === null || menyimpan}
+            onClick={() => void kirimPenilaian()}
+          >
+            {menyimpan ? 'Menyimpan…' : 'Simpan penilaian'}
+          </button>
+          <button className="tombol-garis" type="button" onClick={() => setTahap('sesi')}>
+            Kembali ke sesi
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Tahap sesi (timer) ---
+  return (
+    <div>
+      <p className="muted">
+        {labelJenisSesi(sesi.jenis)} · {framework.nama}
+      </p>
+      <h1>{masalahSesi?.judul ?? 'Memuat masalah…'}</h1>
+      {(sesi.jenis === 're_use' || sesi.jenis === 'catch_up') && (
+        <p className="muted">
+          Terapkan {framework.nama} ke masalah ini dari ingatan. Catatan lama
+          tidak ditampilkan.
+        </p>
+      )}
+
+      <div className="timer">
+        {String(menit).padStart(2, '0')}:{String(detik).padStart(2, '0')}
+      </div>
+      <p className="muted" style={{ textAlign: 'center' }}>
+        {waktuHabis
+          ? 'Waktu target habis — lanjutkan bila perlu.'
+          : `dari ${sesi.durasi_target_menit} menit target`}
+      </p>
+      <div className="baris-tombol" style={{ justifyContent: 'center' }}>
+        {berjalan ? (
+          <button className="tombol-garis" type="button" onClick={() => void jeda()}>
+            Jeda
+          </button>
+        ) : (
+          <button className="tombol-utama" type="button" onClick={() => setBerjalan(true)}>
+            {elapsedDetik === 0 ? 'Mulai timer' : 'Lanjutkan'}
+          </button>
+        )}
+        <button className="tombol-garis" type="button" onClick={() => void kePenilaian()}>
+          Selesai &amp; Nilai
+        </button>
+      </div>
+
+      {sesi.jenis === 'penerapan' && (
+        <details className="kartu">
+          <summary>
+            <strong>Panduan 4 tahap (opsional)</strong>
+          </summary>
+          <p>
+            <strong>Recall (0–5&prime;):</strong> tutup catatan. Apa yang kamu
+            ingat dari {framework.nama}?
+          </p>
+          <p>
+            <strong>Prosedur (5–20&prime;):</strong> {framework.lapis_b_prosedur}
+          </p>
+          <p>
+            <strong>Penerapan (20–35&prime;):</strong> terapkan ke masalahmu.{' '}
+            {framework.lapis_a_pemetaan}
+          </p>
+          <p>
+            <strong>Artefak (35–45&prime;):</strong> tulis hasil penerapanmu dan
+            catat kapan framework ini salah alat. {framework.lapis_c_kesalahan}
+          </p>
+        </details>
+      )}
+
+      <label htmlFor="catatan">Catatan (disimpan otomatis tiap 30 detik)</label>
+      <textarea
+        id="catatan"
+        value={catatan ?? ''}
+        onChange={(e) => {
+          catatanRef.current = e.target.value;
+          setCatatan(e.target.value);
+        }}
+        placeholder="Tulis temuanmu selagi menerapkan framework ini."
+      />
+
+      <div className="baris-tombol">
+        <button
+          className="tombol-teks"
+          type="button"
+          onClick={() => {
+            void jeda();
+            navigasi('#/');
+          }}
+        >
+          Simpan draft &amp; keluar
+        </button>
+      </div>
+    </div>
+  );
+}

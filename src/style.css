@@ -1,0 +1,550 @@
+/* Padi — gaya visual (dokumen 04 §2).
+ * Flat dan tipografis: satu keluarga sans-serif sistem, tanpa webfont,
+ * tanpa gradien, tanpa bayangan tebal. Hierarki dari ukuran/berat tipografi.
+ * Kuning #F5D90A hanya untuk aksi utama. Hijau hanya untuk status.
+ * Tanpa emoji di dalam app.
+ */
+
+:root {
+  --bg: #fbfbf8;
+  --card: #ffffff;
+  --text: #0d0d0b;
+  --muted: #6b6b66;
+  --border: #e0e0da;
+  --accent: #f5d90a;
+  --accent-text: #0d0d0b;
+  --hijau: #2e7d32;
+  --oranye: #e65100;
+  --kuning-status: #b7950b;
+  --abu: #8a8a8a;
+  --abu-garis: #bdbdbd;
+  --biru: #1565c0;
+  --merah: #c62828;
+  --radius: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --card: #1c1c1c;
+    --text: #edede8;
+    --muted: #a8a8a0;
+    --border: #2a2a2a;
+    --hijau: #7ed957;
+    --oranye: #ffb74d;
+    --kuning-status: #f5d90a;
+    --abu: #8a8a8a;
+    --abu-garis: #6b6b66;
+    --biru: #64b5f6;
+    --merah: #ef9a9a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.4rem;
+}
+
+p {
+  margin: 0.4rem 0;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.kecil {
+  font-size: 0.85rem;
+}
+
+/* --- Kerangka --- */
+
+.pembungkus {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+
+.kepala {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 20px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.merek {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.nav a.aktif {
+  background: var(--card);
+  border: 1px solid var(--border);
+  font-weight: 700;
+}
+
+/* --- Kartu --- */
+
+.kartu {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 12px 0;
+}
+
+.kartu h2 {
+  margin-top: 0;
+}
+
+/* --- Tombol --- */
+
+.tombol-utama {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--accent-text);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+}
+
+.tombol-utama:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tombol-garis {
+  display: inline-block;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tombol-teks {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 2px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tombol-teks:hover {
+  color: var(--text);
+}
+
+.baris-tombol {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* --- Formulir --- */
+
+label {
+  display: block;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.chip {
+  display: inline-block;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin: 0 6px 6px 0;
+  cursor: pointer;
+  background: var(--card);
+  font-size: 0.9rem;
+}
+
+.chip.terpilih {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.pilihan {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.pilihan.terpilih {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+/* --- Ranking matching --- */
+
+.baris-ranking {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.baris-ranking:first-of-type {
+  border-top: none;
+}
+
+.peringkat {
+  font-size: 1.4rem;
+  font-weight: 800;
+  min-width: 28px;
+  text-align: center;
+}
+
+.nama-framework {
+  font-weight: 700;
+}
+
+.alasan {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 2px 0 0;
+}
+
+.label-eksplorasi {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* --- Status --- */
+
+.dot-status {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.dot-status.abu-abu {
+  background: var(--abu);
+}
+.dot-status.kuning {
+  background: var(--kuning-status);
+}
+.dot-status.hijau {
+  background: var(--hijau);
+}
+.dot-status.oranye {
+  background: var(--oranye);
+}
+
+.teks-hijau {
+  color: var(--hijau);
+}
+.teks-oranye {
+  color: var(--oranye);
+}
+.teks-kuning {
+  color: var(--kuning-status);
+}
+
+/* --- Timer --- */
+
+.timer {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center;
+  margin: 16px 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Rubrik --- */
+
+.rubrik {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  cursor: pointer;
+}
+
+.rubrik.terpilih {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+}
+
+.rubrik .skor {
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+/* --- Checklist --- */
+
+.cek {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+
+.cek input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+/* --- Daftar --- */
+
+.baris-daftar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.baris-daftar:first-of-type {
+  border-top: none;
+}
+
+.lencana {
+  display: inline-block;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.lencana.berkualitas {
+  border-color: var(--hijau);
+  color: var(--hijau);
+  font-weight: 700;
+}
+
+/* --- Progres --- */
+
+.metrik {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.metrik .kotak {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.metrik .angka {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.grafik-hari {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.hari {
+  flex: 1;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.hari .kotak-hari {
+  height: 28px;
+  border-radius: 6px;
+  background: var(--border);
+  margin-bottom: 4px;
+}
+
+.hari.aktif .kotak-hari {
+  background: var(--accent);
+}
+
+/* --- Langkah flow --- */
+
+.indikator-langkah {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.pesan-error {
+  background: var(--card);
+  border: 1px solid var(--oranye);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+}
+
+pre.isi-artefak {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: inherit;
+  margin: 8px 0;
+}
+
+/* --- Peta (graph SVG) --- */
+
+/* Wadah geser horizontal: SVG tetap terbaca di layar sempit tanpa
+ * membuat halaman meluber. */
+.peta-gulir {
+  overflow-x: auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin: 12px 0;
+}
+
+.peta-svg {
+  display: block;
+  width: 100%;
+  min-width: 700px;
+  height: auto;
+}
+
+.peta-kepala-tema {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.peta-subtema {
+  font-size: 10px;
+  fill: var(--muted);
+}
+
+.peta-kotak {
+  fill: var(--card);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.peta-node:hover .peta-kotak,
+.peta-node:focus-visible .peta-kotak {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.peta-label {
+  font-size: 12px;
+  fill: var(--text);
+  pointer-events: none;
+}
+
+.legenda {
+  margin: 8px 0 16px;
+}
+
+.legenda-baris {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 3px 0;
+}
