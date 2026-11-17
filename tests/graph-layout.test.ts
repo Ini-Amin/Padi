@@ -2,7 +2,9 @@
  * Uji tata letak graph SVG (M3): modul murni graph-layout.ts.
  * Yang diuji adalah model render (posisi node + path edge) yang dipakai
  * GraphSvg: jumlah node/edge harus sama dengan graph.json, node tidak boleh
- * tumpang tindih, dan edge paralel harus tergambar terpisah.
+ * tumpang tindih, edge paralel harus tergambar terpisah, dan SETIAP edge
+ * hanya lewat gutter (tidak ada titik path yang jatuh di dalam node
+ * bukan ujung).
  */
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -120,15 +122,252 @@ describe('hitungLayout: edge', () => {
     expect(pasangan[0].d).not.toBe(pasangan[1].d);
   });
 
-  it('edge satu kolom melengkung (kurva Q), lintas kolom lurus (garis L)', () => {
-    const satuKolom = layout.edges.find(
+  it('semua path berupa polyline siku (hanya M/L, tanpa kurva Q)', () => {
+    for (const e of layout.edges) {
+      expect(e.d).not.toContain('Q');
+      expect(e.d).toMatch(/^M -?[\d.]+ -?[\d.]+( L -?[\d.]+ -?[\d.]+)+$/);
+    }
+  });
+
+  it('semua edge dimulai dan berakhir di tepi kotak node ujungnya', () => {
+    const byId = new Map(layout.nodes.map((n) => [n.id, n]));
+    for (const e of layout.edges) {
+      const dari = byId.get(e.dari)!;
+      const ke = byId.get(e.ke)!;
+      const titik = uraianTitik(e.d);
+      const awal = titik[0];
+      const akhir = titik[titik.length - 1];
+      // Awal: di salah satu tepi vertikal kotak sumber.
+      expect(
+        awal.x === dari.x || awal.x === dari.x + dari.lebar,
+        `${e.dari}→${e.ke}: awal x=${awal.x}`,
+      ).toBe(true);
+      expect(awal.y).toBeGreaterThanOrEqual(dari.y);
+      expect(awal.y).toBeLessThanOrEqual(dari.y + dari.tinggi);
+      // Akhir: di tepi kotak target, atau ≤2px di luarnya bila berpanah.
+      const dx = Math.max(ke.x - akhir.x, 0, akhir.x - (ke.x + ke.lebar));
+      const dy = Math.max(ke.y - akhir.y, 0, akhir.y - (ke.y + ke.tinggi));
+      expect(Math.hypot(dx, dy)).toBeLessThanOrEqual(e.panah ? 2.01 : 0.01);
+    }
+  });
+
+  it('edge satu kolom lewat gutter kanan kolom (pestel→ansoff)', () => {
+    const pestel = layout.nodes.find((n) => n.id === 'pestel')!;
+    const ansoff = layout.nodes.find((n) => n.id === 'ansoff')!;
+    const edge = layout.edges.find(
       (e) => e.dari === 'pestel' && e.ke === 'ansoff',
     )!;
-    expect(satuKolom.d).toContain('Q');
-    const lintasKolom = layout.edges.find(
+    const titik = uraianTitik(edge.d);
+    // Mulai di tepi kanan pestel, berakhir di tepi kanan ansoff.
+    expect(titik[0].x).toBe(pestel.x + pestel.lebar);
+    expect(titik[titik.length - 1].x).toBe(ansoff.x + ansoff.lebar);
+    // Segmen vertikal berada di gutter kanan kolom A (158..170).
+    expect(titik[1].x).toBeGreaterThan(158);
+    expect(titik[1].x).toBeLessThan(170);
+    expect(titik[1].x).toBe(titik[2].x);
+  });
+
+  it('edge lintas kolom berupa siku lewat celah baris (porter-5f→bcg)', () => {
+    const porter = layout.nodes.find((n) => n.id === 'porter-5f')!;
+    const bcg = layout.nodes.find((n) => n.id === 'bcg')!;
+    const edge = layout.edges.find(
       (e) => e.dari === 'porter-5f' && e.ke === 'bcg',
     )!;
-    expect(lintasKolom.d).toContain('L');
+    const titik = uraianTitik(edge.d);
+    // Keluar tepi kanan porter, masuk tepi kiri bcg (bukan panah).
+    expect(titik[0].x).toBe(porter.x + porter.lebar);
+    expect(titik[titik.length - 1].x).toBe(bcg.x);
+    // Ada segmen horizontal panjang di celah baris antara baris 0 dan 1
+    // (celah y 104..118, tengah 111).
+    const adaJalan = titik.some(
+      (t, i) =>
+        i > 0 &&
+        t.y === titik[i - 1].y &&
+        t.y > 104 &&
+        t.y < 118 &&
+        Math.abs(t.x - titik[i - 1].x) > 50,
+    );
+    expect(adaJalan).toBe(true);
+  });
+
+  it('edge berbeda yang berbagi gutter baris mendapat lajur berbeda', () => {
+    // porter-5f→bcg dan bcg→ansoff sama-sama memakai celah baris y=111.
+    const e1 = layout.edges.find(
+      (e) => e.dari === 'porter-5f' && e.ke === 'bcg',
+    )!;
+    const e2 = layout.edges.find(
+      (e) => e.dari === 'bcg' && e.ke === 'ansoff',
+    )!;
+    expect(jalanTerpanjangY(e1.d)).not.toBe(jalanTerpanjangY(e2.d));
+  });
+});
+
+/** Urai path `d` (M/L) menjadi waypoint. */
+function uraianTitik(d: string): { x: number; y: number }[] {
+  const token = d.match(/[ML]|-?\d+(?:\.\d+)?/g) ?? [];
+  const titik: { x: number; y: number }[] = [];
+  for (let i = 0; i < token.length; i++) {
+    if (token[i] === 'M' || token[i] === 'L') {
+      titik.push({ x: Number(token[i + 1]), y: Number(token[i + 2]) });
+      i += 2;
+    }
+  }
+  return titik;
+}
+
+/** Y dari segmen horizontal terpanjang (jalan di celah baris). */
+function jalanTerpanjangY(d: string): number {
+  const titik = uraianTitik(d);
+  let terbaik = { y: 0, panjang: 0 };
+  for (let i = 1; i < titik.length; i++) {
+    if (titik[i].y === titik[i - 1].y) {
+      const panjang = Math.abs(titik[i].x - titik[i - 1].x);
+      if (panjang > terbaik.panjang) terbaik = { y: titik[i].y, panjang };
+    }
+  }
+  return terbaik.y;
+}
+
+/**
+ * Sampling titik-titik sepanjang path `d` (M/L/Q) tiap ≤2px. Dipakai
+ * property test: titik-titik inilah yang harus bebas dari node bukan ujung.
+ */
+function samplingPath(d: string): { x: number; y: number }[] {
+  const token = d.match(/[MLQ]|-?\d+(?:\.\d+)?/g) ?? [];
+  const titik: { x: number; y: number }[] = [];
+  let saatIni = { x: 0, y: 0 };
+  const dorongGaris = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const panjang = Math.hypot(b.x - a.x, b.y - a.y);
+    const langkah = Math.max(1, Math.ceil(panjang / 2));
+    for (let k = 0; k <= langkah; k++) {
+      const t = k / langkah;
+      titik.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    }
+  };
+  let i = 0;
+  while (i < token.length) {
+    const cmd = token[i++];
+    if (cmd === 'M') {
+      saatIni = { x: Number(token[i++]), y: Number(token[i++]) };
+      titik.push({ ...saatIni });
+    } else if (cmd === 'L') {
+      const tujuan = { x: Number(token[i++]), y: Number(token[i++]) };
+      dorongGaris(saatIni, tujuan);
+      saatIni = tujuan;
+    } else if (cmd === 'Q') {
+      const kendali = { x: Number(token[i++]), y: Number(token[i++]) };
+      const tujuan = { x: Number(token[i++]), y: Number(token[i++]) };
+      for (let k = 0; k <= 50; k++) {
+        const t = k / 50;
+        const u = 1 - t;
+        titik.push({
+          x: u * u * saatIni.x + 2 * u * t * kendali.x + t * t * tujuan.x,
+          y: u * u * saatIni.y + 2 * u * t * kendali.y + t * t * tujuan.y,
+        });
+      }
+      saatIni = tujuan;
+    }
+  }
+  return titik;
+}
+
+describe('hitungLayout: edge hanya lewat gutter (property test)', () => {
+  it('tidak ada titik edge yang jatuh di dalam node bukan ujung (data nyata)', () => {
+    for (const e of layout.edges) {
+      const ujung = new Set([e.dari, e.ke]);
+      const pelanggaran: string[] = [];
+      for (const p of samplingPath(e.d)) {
+        for (const n of layout.nodes) {
+          if (ujung.has(n.id)) continue;
+          // Toleransi 1px di tepi: titik tepat di batas kotak bukan pelanggaran.
+          const diDalam =
+            p.x > n.x + 1 &&
+            p.x < n.x + n.lebar - 1 &&
+            p.y > n.y + 1 &&
+            p.y < n.y + n.tinggi - 1;
+          if (diDalam) {
+            pelanggaran.push(
+              `(${p.x.toFixed(1)}, ${p.y.toFixed(1)}) di dalam ${n.id}`,
+            );
+          }
+        }
+      }
+      expect(
+        pelanggaran.slice(0, 5),
+        `edge ${e.dari}→${e.ke} (${e.tipe}): ${pelanggaran.length} titik melanggar`,
+      ).toEqual([]);
+    }
+  });
+});
+
+describe('hitungLayout: routing fixture', () => {
+  // Kolom A 3 node, kolom B 1 node (hanya baris 0), kolom C 3 node.
+  const fw = [
+    buatFramework({ id: 'a0', nama: 'A0', tema: 'A', urutan_katalog: 1 }),
+    buatFramework({ id: 'a1', nama: 'A1', tema: 'A', urutan_katalog: 2 }),
+    buatFramework({ id: 'a2', nama: 'A2', tema: 'A', urutan_katalog: 3 }),
+    buatFramework({ id: 'b0', nama: 'B0', tema: 'B', urutan_katalog: 4 }),
+    buatFramework({ id: 'c0', nama: 'C0', tema: 'C', urutan_katalog: 5 }),
+    buatFramework({ id: 'c1', nama: 'C1', tema: 'C', urutan_katalog: 6 }),
+    buatFramework({ id: 'c2', nama: 'C2', tema: 'C', urutan_katalog: 7 }),
+  ];
+
+  it('edge sebaris tanpa node antara lurus tepi-ke-tepi (a2→c2)', () => {
+    const hasil = hitungLayout(fw, [
+      { dari: 'a2', ke: 'c2', tipe: 'dipakai_bersama', alasan: null },
+    ]);
+    expect(hasil.edges).toHaveLength(1);
+    const titik = uraianTitik(hasil.edges[0].d);
+    expect(titik).toHaveLength(2);
+    expect(titik[0].y).toBe(titik[1].y);
+  });
+
+  it('edge sebaris dengan node antara memakai siku, bukan lurus (a0→c0)', () => {
+    const hasil = hitungLayout(fw, [
+      { dari: 'a0', ke: 'c0', tipe: 'dipakai_bersama', alasan: null },
+    ]);
+    const titik = uraianTitik(hasil.edges[0].d);
+    expect(titik.length).toBeGreaterThan(2);
+  });
+
+  it('edge paralel satu kolom terpisah di gutter (dua edge a0→a1)', () => {
+    const hasil = hitungLayout(fw, [
+      { dari: 'a0', ke: 'a1', tipe: 'prasyarat', alasan: null },
+      { dari: 'a0', ke: 'a1', tipe: 'satu_tema', alasan: null },
+    ]);
+    expect(hasil.edges).toHaveLength(2);
+    const [d1, d2] = hasil.edges.map((e) => uraianTitik(e.d));
+    // Segmen vertikal (waypoint ke-2) berada di x berbeda.
+    expect(d1[1].x).not.toBe(d2[1].x);
+    expect(d1[1].y).not.toBe(d2[1].y);
+  });
+
+  it('property test juga berlaku untuk fixture', () => {
+    const hasil = hitungLayout(fw, [
+      { dari: 'a2', ke: 'c2', tipe: 'dipakai_bersama', alasan: null },
+      { dari: 'a0', ke: 'c0', tipe: 'kontras', alasan: null },
+      { dari: 'a0', ke: 'a1', tipe: 'prasyarat', alasan: null },
+      { dari: 'a0', ke: 'a1', tipe: 'satu_tema', alasan: null },
+      { dari: 'b0', ke: 'c2', tipe: 'prasyarat', alasan: null },
+    ]);
+    for (const e of hasil.edges) {
+      const ujung = new Set([e.dari, e.ke]);
+      const pelanggaran: string[] = [];
+      for (const p of samplingPath(e.d)) {
+        for (const n of hasil.nodes) {
+          if (ujung.has(n.id)) continue;
+          if (
+            p.x > n.x + 1 &&
+            p.x < n.x + n.lebar - 1 &&
+            p.y > n.y + 1 &&
+            p.y < n.y + n.tinggi - 1
+          ) {
+            pelanggaran.push(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)}) di ${n.id}`);
+          }
+        }
+      }
+      expect(pelanggaran.slice(0, 5)).toEqual([]);
+    }
   });
 });
 
