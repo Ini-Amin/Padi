@@ -583,7 +583,7 @@ pre.isi-artefak {
 /* --- Peta (graph SVG) --- */
 
 /* SVG menyesuaikan lebar wadah (tanpa lebar minimum): tidak pernah ada
- * scrollbar horizontal. Di bawah 720px graph disembunyikan dan daftar
+ * scrollbar horizontal. Di bawah 804px graph disembunyikan dan daftar
  * bertema menjadi tampilan utama (dokumen 04 §3.3). */
 .peta-gulir {
   overflow-x: auto;
@@ -702,18 +702,21 @@ pre.isi-artefak {
 /* --- Responsif --- */
 
 /* Layar lebar: Peta memakai wadah lebih lebar agar node terbaca
- * (node 64px pada skala tampil penuh, label 13px; target sentuh
- * mencapai 44px mulai lebar viewport sekitar 900px). */
+ * (node 64px pada skala tampil penuh, label 13px). Target sentuh 44px
+ * tercapai pada lebar viewport 804px: lebar SVG = viewport − 50
+ * (padding wadah 32 + padding/border .peta-gulir 18), skala =
+ * SVG / 1096, tinggi node = 64 × skala; 44px butuh SVG ≥ 753,5px. */
 @media (min-width: 760px) {
   .pembungkus.lebar {
     max-width: 1080px;
   }
 }
 
-/* Di bawah 720px graph tidak lagi terbaca: sembunyikan SVG (legenda
- * hidup di dalamnya), tampilkan catatan bahwa daftar di bawah adalah
- * tampilan utama. */
-@media (max-width: 720px) {
+/* Di bawah 804px node yang dirender jatuh di bawah target sentuh 44px
+ * (lihat hitungan di atas): sembunyikan SVG (legenda hidup di
+ * dalamnya), tampilkan catatan bahwa daftar di bawah adalah tampilan
+ * utama. */
+@media (max-width: 803px) {
   .peta-gulir {
     display: none;
   }

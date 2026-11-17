@@ -14,7 +14,7 @@
  *   menampilkan hitungan. "Tampilkan semua" / Esc keluar dari mode.
  *
  * Daftar bertema di bawahnya tetap ada sebagai fallback aksesibilitas
- * (dokumen 04 §3.3). Layar sempit: SVG disembunyikan di bawah 720px (CSS)
+ * (dokumen 04 §3.3). Layar sempit: SVG disembunyikan di bawah 804px (CSS)
  * dan daftar bertema menjadi tampilan utama. Di layar lebar, wadah Peta
  * melebar sampai 1080px agar node mencapai target sentuh 44px dan label
  * terbaca.

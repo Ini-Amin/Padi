@@ -3,7 +3,7 @@
  *
  * Layout: satu kolom per tema (A–G, kiri ke kanan), node di dalam kolom
  * diurutkan `urutan_katalog`. Node berukuran 136×64; celah antar kolom
- * 12px, celah antar baris 14px.
+ * 16px, celah antar baris 14px.
  *
  * Edge dirute HANYA lewat gutter (celah antar node), tidak pernah melewati
  * area kartu node lain dan tidak pernah memakai margin luar viewBox.
@@ -22,25 +22,31 @@
  *   horizontal di celah itu, jog vertikal ke baris target, masuk.
  *
  * Lajur dihitung PER SEGMEN PER GUTTER dalam DUA PASS: pass 1 mewarnai
- * dari interval offset-0 yang diperlebar ±3px (aman, tapi konservatif);
+ * dari interval offset-0 yang diperlebar ±5px (aman, tapi konservatif);
  * pass 2 mengukur ulang interval dari geometri final pass 1 tanpa
  * perluasan, lalu mewarnai ulang — hanya segmen yang benar-benar
  * tumpang tindih di geometri akhir yang mendapat lajur berbeda
- * (gutter A-B: 5→4 lajur, E-F: 4→3, F-G: 3→2). Untuk tiap gutter
+ * (jumlah lajur akhir: A-B 4, B-C 3, C-D 1, D-E 2, E-F 3, F-G 2 —
+ * masing-masing sama dengan kedalaman tumpang tindih akhir). Untuk tiap gutter
  * (sumbu + koordinat tetap), semua segmen yang berjalan di sana
  * diwarnai dengan pewarnaan interval greedy deterministik, jadi dua
  * segmen yang tumpang tindih di satu gutter selalu mendapat lajur
  * berbeda, sementara segmen yang tidak tumpang tindih boleh berbagi
- * lajur. Lajur mengelompok di tengah gutter: span = min(6, 2,25×(N−1))
- * px untuk N lajur (N=2 → ±1,13px, N=3 → ±2,25px, N≥4 → ±3px), jadi
- * tidak ada garis yang lebih dekat dari 2px ke tepi kartu. Edge
+ * lajur. Lajur mengelompok di tengah gutter dengan langkah alami
+ * 10/3 ≈ 3,33px, dibatasi span maksimum per sumbu (10px untuk segmen
+ * vertikal di gutter kolom 16px, 8px untuk segmen horizontal di celah
+ * baris 14px): N=2 → ±1,67px, N=3 → ±3,33px, N=4 di gutter kolom →
+ * ±5px; tepi garis 2px selalu ≥2px dari kartu. Langkah 2px yang lama
+ * masih menyatu jadi satu strip pada zoom 100% (cek live 22:19 WIB),
+ * langkah 3,33px memberi celah antar tepi garis ~1,6px. Edge
  * berpanah yang berjog meminta lajur ekstrem di gutter segmen vertikal
  * sebelum segmen terakhirnya, supaya segmen terakhirnya ≥ 6px; gutter
- * yang memuat segmen berpreferensi memakai grid minimal 3 lajur. Batas
- * geometri: stub horizontal maksimal 9px (gutter 12px) dan stub
- * vertikal maksimal 10px (celah 14px), jadi segmen pertama/terakhir
- * edge berjog tidak bisa 10px semua; yang dijamin adalah tidak ada
- * segmen berbalik arah dan segmen terakhir panah ≥ 6px.
+ * yang memuat segmen berpreferensi memakai grid minimal 3 lajur
+ * (ekstrem ±3,33px, segmen terakhir panah ≥ 9,33px). Batas geometri:
+ * stub horizontal nominal 8px (gutter 16px), minimal 3px bila lajur
+ * tetangganya di ekstrem berlawanan; stub vertikal maksimal 10px
+ * (celah 14px); yang dijamin adalah tidak ada segmen berbalik arah
+ * dan segmen terakhir panah ≥ 5,9px (aktual ≥ 9,33px).
  */
 import type { Edge, Framework, StatusFramework, Tema, TipeEdge } from './domain';
 
@@ -57,7 +63,7 @@ export const NAMA_PENDEK_TEMA: Record<Tema, string> = {
   G: 'Pengukuran',
 };
 
-export const LEBAR_KOLOM = 148;
+export const LEBAR_KOLOM = 152;
 export const LEBAR_NODE = 136;
 export const TINGGI_NODE = 64;
 export const JARAK_BARIS = 78;
@@ -178,10 +184,11 @@ export const BATAS_LEGENDA = { x0: 16, y0: 285, x1: 460, y1: 420 };
  * 4 dan kolom G baris 3-4 kosong). Diverifikasi bebas edge DAN bebas node
  * oleh tes, seperti zona legenda. Isinya massa nyata (hitungan framework
  * per status + stacked bar), bukan copy — Hallmark gate 77/79.
- * x0 = 766 memberi jarak 9-10px dari run E-F terdekat (lean-startup→
- * kanban, x=756); y0 = 344 memberi jarak 6px dari bawah ADKAR (y=338).
+ * x0 = 786 memberi jarak 10px dari tengah gutter E-F (776; lajur
+ * terluar 779,33 + setengah lebar garis ≈ 780); y0 = 344 memberi jarak
+ * 6px dari bawah ADKAR (y=338); x1 = 1080 = lebar viewBox − 16.
  */
-export const BATAS_PROGRES = { x0: 766, y0: 344, x1: 1052, y1: 420 };
+export const BATAS_PROGRES = { x0: 786, y0: 344, x1: 1080, y1: 420 };
 
 export const LABEL_EDGE: Record<TipeEdge, string> = {
   prasyarat: 'Prasyarat',
@@ -255,7 +262,7 @@ function pusat(node: NodeTataLetak): { x: number; y: number } {
   return { x: node.x + node.lebar / 2, y: node.y + node.tinggi / 2 };
 }
 
-/** Jarak tepi node ke tengah gutter vertikal (celah antar kolom 12px). */
+/** Jarak tepi node ke tengah gutter vertikal (celah antar kolom 16px). */
 const GUTTER_X = (LEBAR_KOLOM - LEBAR_NODE) / 2;
 /** Jarak tepi node ke tengah gutter horizontal (celah antar baris 14px). */
 const GUTTER_Y = (JARAK_BARIS - TINGGI_NODE) / 2;
@@ -535,17 +542,35 @@ function bulat2(v: number): number {
 
 /**
  * Perluasan interval untuk pewarnaan lajur pass 1 (px). Sudut path
- * bergeser mengikuti offset segmen tetangganya (maksimal 3px), jadi
- * interval segmen pada offset 0 diperlebar 3px di tiap ujung saat
+ * bergeser mengikuti offset segmen tetangganya (maksimal 5px), jadi
+ * interval segmen pada offset 0 diperlebar 5px di tiap ujung saat
  * menguji tumpang tindih — dua segmen yang hanya bersentuhan di offset
  * 0 tetap mendapat lajur berbeda bila sudutnya bisa bergeser sampai
  * tumpang tindih di geometri akhir. Perluasan ini konservatif: ia
- * membuat lajur yang sebenarnya tidak perlu (gutter A-B: 5 lajur
- * padahal kedalaman tumpang tindih akhirnya hanya 4). Karena itu
+ * membuat lajur yang sebenarnya tidak perlu. Karena itu
  * hitungOffsetSegmen menjalankan pass 2 yang mengukur ulang interval
  * dari geometri final pass 1 tanpa perluasan.
  */
-const PERLUASAN_INTERVAL = 3;
+const PERLUASAN_INTERVAL = 5;
+
+/**
+ * Langkah alami antar lajur (px). Gutter kolom 16px memberi ruang
+ * untuk langkah lebih lebar dari 2,25px yang lama: pada zoom 100%
+ * (skala tampil ~1x), lajur berjarak 2px masih menyatu jadi satu
+ * strip (cek live 22:19 WIB); langkah 10/3 ≈ 3,33px memberi celah
+ * antar tepi garis ~1,6px untuk garis 1,5–2px, cukup untuk terpisah
+ * secara visual.
+ */
+const LANGKAH_LAJUR = 10 / 3;
+
+/**
+ * Span maksimum lajur per sumbu (px). Segmen vertikal di gutter kolom
+ * 16px: |offset| ≤ 5 menjaga tepi garis 2px sejauh ≥2px dari kartu
+ * (8 − 5 − 1 = 2). Segmen horizontal di celah baris 14px: |offset| ≤ 4
+ * (7 − 4 − 1 = 2).
+ */
+const SPAN_LAJUR_X = 10;
+const SPAN_LAJUR_Y = 8;
 
 /**
  * Pewarnaan lajur PER SEGMEN PER GUTTER dari interval yang diukur
@@ -556,17 +581,20 @@ const PERLUASAN_INTERVAL = 3;
  * pewarnaan interval greedy deterministik (urut awal interval, lalu
  * kunci edge): dua segmen yang tumpang tindih selalu mendapat lajur
  * berbeda, segmen yang tidak tumpang tindih boleh berbagi lajur.
- * Lajur mengelompok di tengah gutter: span = min(6, 2,25×(N−1)) untuk
- * N lajur, jadi |offset| ≤ 3 (tidak lebih dekat dari 2px ke tepi kartu,
- * menghitung lebar garis 2px).
+ * Lajur mengelompok di tengah gutter dengan langkah alami 10/3 px,
+ * dibatasi span maksimum per sumbu (10px untuk segmen vertikal di
+ * gutter kolom, 8px untuk segmen horizontal di celah baris), jadi
+ * |offset| ≤ 5 (sumbu x) / ≤ 4 (sumbu y) — tepi garis 2px tidak lebih
+ * dekat dari 2px ke tepi kartu.
  *
  * Segmen berpreferensi (panah berjog) ditempatkan di lajur ekstrem:
  * preferensi negatif di terbawah, positif di teratas, dan grup yang
  * memuatnya memakai grid minimal 3 lajur supaya ekstrem mencapai
- * ±2,25px (segmen terakhir panah jadi ≥ 6px). Batasan: dua panah
- * berpreferensi sama yang tumpang tindih di satu gutter tidak bisa
- * keduanya duduk di lajur ekstrem (hanya satu yang mendapatnya);
- * kasus itu tidak terjadi pada data nyata maupun fixture.
+ * ±3,33px (segmen terakhir panah jadi ≥ 9,33px: stub nominal 6px
+ * ditambah ekstrem). Batasan: dua panah berpreferensi sama yang
+ * tumpang tindih di satu gutter tidak bisa keduanya duduk di lajur
+ * ekstrem (hanya satu yang mendapatnya); kasus itu tidak terjadi
+ * pada data nyata maupun fixture.
  */
 function warnaiLajur(
   rute: RuteEdge[],
@@ -581,7 +609,7 @@ function warnaiLajur(
   );
 
   // Kelompokkan segmen per gutter (sumbu + koordinat tetap).
-  const grup = new Map<string, SegmenLajur[]>();
+  const grup = new Map<string, { sumbu: 'x' | 'y'; daftar: SegmenLajur[] }>();
   rute.forEach((r, edge) => {
     r.segmen.forEach((s, segmen) => {
       const kritis = r.preferensi !== 0 && segmen === r.segmen.length - 2;
@@ -595,13 +623,13 @@ function warnaiLajur(
         lajur: -1,
       };
       const k = `${s.sumbu}:${s.tetap}`;
-      const daftar = grup.get(k) ?? [];
-      daftar.push(entri);
-      grup.set(k, daftar);
+      const g = grup.get(k) ?? { sumbu: s.sumbu, daftar: [] };
+      g.daftar.push(entri);
+      grup.set(k, g);
     });
   });
 
-  for (const daftar of grup.values()) {
+  for (const { sumbu, daftar } of grup.values()) {
     const urut = [...daftar].sort((a, b) => {
       if (a.awal !== b.awal) return a.awal - b.awal;
       const ka = kunci(rute[a.edge]);
@@ -657,7 +685,7 @@ function warnaiLajur(
     const jumlahLajur = Math.max(...daftar.map((s) => s.lajur)) + 1;
 
     // Gutter berpreferensi memakai grid minimal 3 lajur, supaya lajur
-    // ekstrem mencapai ±2,25px (segmen terakhir panah jadi ≥ 6px).
+    // ekstrem mencapai ±3,33px (segmen terakhir panah jadi ≥ 9,33px).
     const adaPreferensi = negatif.length + positif.length > 0;
     const grid = adaPreferensi ? Math.max(jumlahLajur, 3) : jumlahLajur;
     // Bila grid diperlebar, geser segmen berpreferensi positif ke lajur
@@ -667,8 +695,11 @@ function warnaiLajur(
       for (const s of positif) s.lajur += geser;
     }
 
+    // Langkah alami 10/3 px, dibatasi span maksimum sumbu ini (10px
+    // untuk gutter kolom, 8px untuk celah baris).
+    const cap = sumbu === 'x' ? SPAN_LAJUR_X : SPAN_LAJUR_Y;
     const langkah =
-      grid <= 1 ? 0 : Math.min(6, 2.25 * (grid - 1)) / (grid - 1);
+      grid <= 1 ? 0 : Math.min(cap, LANGKAH_LAJUR * (grid - 1)) / (grid - 1);
     for (const s of daftar) {
       offset[s.edge][s.segmen] = bulat2((s.lajur - (grid - 1) / 2) * langkah);
     }
@@ -679,25 +710,24 @@ function warnaiLajur(
 /**
  * Hitung offset lajur dalam DUA PASS.
  *
- * Pass 1 mewarnai dari interval offset-0 yang diperlebar ±3px
+ * Pass 1 mewarnai dari interval offset-0 yang diperlebar ±5px
  * (PERLUASAN_INTERVAL): aman, tapi konservatif — lajur yang
- * sebenarnya tidak perlu ikut dibuat (gutter A-B: 5 lajur padahal
- * kedalaman tumpang tindih akhirnya hanya 4; E-F: 4 padahal 3;
- * F-G: 3 padahal 2).
+ * sebenarnya tidak perlu ikut dibuat (perluasan menutupi pergeseran
+ * sudut maksimal 5px).
  *
  * Pass 2 menerapkan offset pass 1, mengukur interval SEBENARNYA dari
  * geometri final itu (tanpa perluasan), lalu mewarnai ulang. Dua
  * segmen yang berbagi lajur di pass 2 benar-benar tidak tumpang
- * tindih di geometri pass 1; pergeseran sudut antar-pass kecil
- * (≤2,25px, dari perubahan lajur segmen horizontal) dan celah kritis
- * (2,25px) dipertahankan karena lajur segmen horizontal yang
- * menentukan ujung-ujung itu tidak berubah antar-pass. Hasil akhir
- * tetap dijaga tes geometri ("tidak ada dua segmen yang berimpit"
- * pada geometri final): bila data berubah dan pass 2 menciptakan
- * impitan, tes itu gagal dan skema ini perlu ditinjau.
+ * tindih di geometri pass 1; celah kritis dipertahankan karena lajur
+ * segmen horizontal yang menentukan ujung-ujung itu tidak berubah
+ * antar-pass (kunci urut yang sama, interval yang tetap tumpang
+ * tindih). Hasil akhir tetap dijaga tes geometri ("tidak ada dua
+ * segmen yang berimpit" pada geometri final): bila data berubah dan
+ * pass 2 menciptakan impitan, tes itu gagal dan skema ini perlu
+ * ditinjau.
  *
- * Hasil pada data nyata: A-B 5→4 lajur (jarak 1,5→2px), E-F 4→3,
- * F-G 3→2 — tanpa mengubah layout, viewBox, atau rute apa pun.
+ * Hasil pada data nyata: lajur akhir A-B 4 (jarak 3,33px), E-F 3,
+ * F-G 2 — masing-masing sama dengan kedalaman tumpang tindih akhir.
  */
 function hitungOffsetSegmen(rute: RuteEdge[]): number[][] {
   const offset1 = warnaiLajur(rute, (r, _edge, segmen) => {
