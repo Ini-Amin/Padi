@@ -6,7 +6,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { NAMA_TEMA, type Tema } from '../domain';
-import { LABEL_STATUS, WARNA_STATUS } from '../status';
+import { LABEL_STATUS } from '../status';
 import { GraphSvg } from './GraphSvg';
 
 const URUTAN_TEMA: Tema[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
@@ -41,7 +41,6 @@ export function MapList(): React.JSX.Element {
             {daftar.map((f) => (
               <div className="baris-daftar" key={f.id}>
                 <span>
-                  <span className={`dot-status ${WARNA_STATUS[f.status]}`} />
                   <strong>{f.nama}</strong>{' '}
                   <span className="muted kecil">{LABEL_STATUS[f.status]}</span>
                 </span>

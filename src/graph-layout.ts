@@ -146,13 +146,27 @@ export interface GayaEdge {
   panah: boolean;
 }
 
-/** Gaya garis per tipe edge (variabel CSS, sadar dark mode). */
+/**
+ * Gaya garis per tipe edge (variabel CSS, sadar dark mode). Hierarki
+ * visual: prasyarat adalah satu-satunya seri yang menonjol (2px, panah);
+ * satu_tema paling pendiam (1px) karena informasinya sudah terbaca dari
+ * pengelompokan kolom — garisnya hanya konteks, bukan argumen peta.
+ */
 export const GAYA_EDGE: Record<TipeEdge, GayaEdge> = {
   prasyarat: { stroke: 'var(--hijau)', dasharray: null, lebar: 2, panah: true },
-  satu_tema: { stroke: 'var(--abu-garis)', dasharray: null, lebar: 1.5, panah: false },
+  satu_tema: { stroke: 'var(--abu-garis)', dasharray: null, lebar: 1, panah: false },
   dipakai_bersama: { stroke: 'var(--biru)', dasharray: '6 3', lebar: 1.5, panah: false },
   kontras: { stroke: 'var(--merah)', dasharray: '3 3', lebar: 1.5, panah: false },
 };
+
+/**
+ * Batas zona legenda di dalam SVG (kiri bawah, di bawah baris ke-2
+ * kolom A–D yang kosong karena tema-tema itu hanya punya 2–3 node).
+ * Diverifikasi bebas edge oleh tes (tidak ada titik path di dalamnya);
+ * legenda dirender di sini, bukan di bawah peta, supaya selalu terlihat
+ * bersama peta. Ubah routing? Tes akan gagal bila ada edge yang masuk.
+ */
+export const BATAS_LEGENDA = { x0: 16, y0: 285, x1: 460, y1: 420 };
 
 export const LABEL_EDGE: Record<TipeEdge, string> = {
   prasyarat: 'Prasyarat',

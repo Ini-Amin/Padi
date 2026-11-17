@@ -26,6 +26,7 @@ import { LABEL_STATUS } from '../status';
 import type { TipeEdge } from '../domain';
 import { useGerakanAktif } from '../gerakan';
 import {
+  BATAS_LEGENDA,
   DESKRIPSI_EDGE,
   GAYA_EDGE,
   LABEL_EDGE,
@@ -47,6 +48,9 @@ const URUTAN_LEGENDA: TipeEdge[] = [
   'dipakai_bersama',
   'kontras',
 ];
+
+/** Tepi kiri legenda di dalam SVG (sama dengan tepi kiri kolom A). */
+const LEGENDA_X = BATAS_LEGENDA.x0;
 
 export function GraphSvg(): React.JSX.Element {
   const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
@@ -238,12 +242,19 @@ export function GraphSvg(): React.JSX.Element {
                   rx={8}
                   className="peta-kotak"
                 />
-                <circle
-                  cx={n.x + 11}
-                  cy={n.y + 11}
-                  r={4}
-                  fill={WARNA_DOT_STATUS[n.status]}
-                />
+                {/* Dot hanya bila statusnya bukan default: dot abu di
+                    semua node tidak membawa informasi; dot yang muncul
+                    berarti framework itu sudah dipakai/dikuasai/perlu
+                    re-use. */}
+                {n.status !== 'belum_dipakai' &&
+                  n.status !== 'disembunyikan' && (
+                    <circle
+                      cx={n.x + 11}
+                      cy={n.y + 11}
+                      r={4}
+                      fill={WARNA_DOT_STATUS[n.status]}
+                    />
+                  )}
                 {n.label.map((baris, i) => (
                   <text
                     key={i}
@@ -258,6 +269,53 @@ export function GraphSvg(): React.JSX.Element {
               </a>
             );
           })}
+
+          {/* Legenda di dalam SVG, mengisi zona mati kiri bawah
+              (BATAS_LEGENDA, diverifikasi bebas edge oleh tes) supaya
+              selalu terlihat bersama peta, bukan di bawah fold. */}
+          <g className="peta-legenda-teks">
+            {URUTAN_LEGENDA.map((tipe, i) => {
+              const gaya = GAYA_EDGE[tipe];
+              const y = 304 + i * 22;
+              return (
+                <g key={tipe}>
+                  <line
+                    x1={LEGENDA_X}
+                    y1={y - 4}
+                    x2={LEGENDA_X + 28}
+                    y2={y - 4}
+                    stroke={gaya.stroke}
+                    strokeWidth={gaya.lebar}
+                    strokeDasharray={gaya.dasharray ?? undefined}
+                  />
+                  <text x={LEGENDA_X + 36} y={y}>
+                    {LABEL_EDGE[tipe]}: {DESKRIPSI_EDGE[tipe]}
+                  </text>
+                </g>
+              );
+            })}
+            <circle
+              cx={LEGENDA_X + 4}
+              cy={388}
+              r={4}
+              fill="var(--kuning-status)"
+            />
+            <circle
+              cx={LEGENDA_X + 16}
+              cy={388}
+              r={4}
+              fill="var(--hijau)"
+            />
+            <circle
+              cx={LEGENDA_X + 28}
+              cy={388}
+              r={4}
+              fill="var(--oranye)"
+            />
+            <text x={LEGENDA_X + 36} y={392}>
+              Titik warna: pernah dipakai, dikuasai, perlu re-use
+            </text>
+          </g>
         </svg>
       </div>
 
@@ -301,34 +359,6 @@ export function GraphSvg(): React.JSX.Element {
         </div>
       )}
 
-      <div className="legenda">
-        {URUTAN_LEGENDA.map((tipe) => {
-          const gaya = GAYA_EDGE[tipe];
-          return (
-            <div className="legenda-baris" key={tipe}>
-              <svg width="28" height="10" aria-hidden="true">
-                <line
-                  x1="0"
-                  y1="5"
-                  x2="28"
-                  y2="5"
-                  stroke={gaya.stroke}
-                  strokeWidth={gaya.lebar}
-                  strokeDasharray={gaya.dasharray ?? undefined}
-                />
-              </svg>
-              <span>
-                <strong>{LABEL_EDGE[tipe]}</strong>{' '}
-                <span className="muted kecil">: {DESKRIPSI_EDGE[tipe]}</span>
-              </span>
-            </div>
-          );
-        })}
-        <p className="muted kecil">
-          Dot warna di tiap node menunjukkan status: abu-abu belum dipakai,
-          kuning pernah dipakai, hijau dikuasai, oranye perlu re-use.
-        </p>
-      </div>
     </div>
   );
 }

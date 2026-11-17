@@ -19,9 +19,10 @@
   --oranye: #bf360c;
   --kuning-status: #7d6608;
   --abu: #8a8a8a;
-  --abu-garis: #8a8a8a;
+  --abu-garis: #6b6b66;
   --biru: #1565c0;
   --merah: #c62828;
+  --peta-kotak: #f4f4ef;
   --radius: 10px;
 }
 
@@ -37,9 +38,10 @@
     --oranye: #ffb74d;
     --kuning-status: #f5d90a;
     --abu: #8a8a8a;
-    --abu-garis: #6b6b66;
+    --abu-garis: #8a8a8a;
     --biru: #64b5f6;
     --merah: #ef9a9a;
+    --peta-kotak: #242424;
   }
 }
 
@@ -609,17 +611,27 @@ pre.isi-artefak {
   fill: var(--muted);
 }
 
+/* Kotak node terangkat satu tingkat dari wadah peta (light: selangkah
+ * lebih gelap, dark: selangkah lebih terang) dengan garis tepi abu
+ * (3,13:1 light / 4,71:1 dark terhadap isi kotak), bukan isi dan garis
+ * yang sama dengan wadah. */
 .peta-kotak {
-  fill: var(--card);
-  stroke: var(--border);
+  fill: var(--peta-kotak);
+  stroke: var(--abu);
   stroke-width: 1;
 }
 
+/* Sorot (hover/tetangga), fokus keyboard, dan pilihan memakai satu
+ * bahasa garis yang sama: garis teks, bukan aksen kuning. Aksen hanya
+ * 1,42:1 di atas putih (gagal 3:1 untuk ring fokus) dan menurut
+ * komentar kepala file ini kuning hanya untuk aksi utama; garis teks
+ * ~19:1 (light) / ~15:1 (dark). Pilihan tetap terbedakan dari hover
+ * oleh strip di bawah peta dan node lain yang meredup. */
 .peta-node:hover .peta-kotak,
 .peta-node:focus-visible .peta-kotak,
 .peta-node.sorot .peta-kotak,
 .peta-node.dipilih .peta-kotak {
-  stroke: var(--accent);
+  stroke: var(--text);
   stroke-width: 2;
 }
 
@@ -629,8 +641,8 @@ pre.isi-artefak {
 .gerakan-aktif .peta-node,
 .gerakan-aktif .peta-edge {
   transition:
-    opacity 0.25s ease,
-    stroke-width 0.25s ease;
+    opacity 0.25s cubic-bezier(0.23, 1, 0.32, 1),
+    stroke-width 0.25s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .peta-node.redup,
@@ -654,15 +666,11 @@ pre.isi-artefak {
   pointer-events: none;
 }
 
-.legenda {
-  margin: 8px 0 16px;
-}
-
-.legenda-baris {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 3px 0;
+/* Legenda hidup di dalam SVG (zona mati kiri bawah), satu tingkat lebih
+ * kecil dari label node, label tebal + deskripsi redup. */
+.peta-legenda-teks {
+  font-size: 12px;
+  fill: var(--text);
 }
 
 .catatan-peta-kecil {
@@ -696,11 +704,11 @@ pre.isi-artefak {
   }
 }
 
-/* Di bawah 720px graph tidak lagi terbaca: sembunyikan SVG + legenda
- * garisnya, tampilkan catatan bahwa daftar di bawah adalah tampilan utama. */
+/* Di bawah 720px graph tidak lagi terbaca: sembunyikan SVG (legenda
+ * hidup di dalamnya), tampilkan catatan bahwa daftar di bawah adalah
+ * tampilan utama. */
 @media (max-width: 720px) {
-  .peta-gulir,
-  .legenda-baris {
+  .peta-gulir {
     display: none;
   }
 

@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { GraphData } from '../src/domain';
 import {
+  BATAS_LEGENDA,
+  GAYA_EDGE,
   LEBAR_NODE,
   PANJANG_MARKER_PANAH_KECIL,
   TINGGI_NODE,
@@ -308,6 +310,57 @@ describe('hitungLayout: edge hanya lewat gutter (property test)', () => {
         `edge ${e.dari}→${e.ke} (${e.tipe}): ${pelanggaran.length} titik melanggar`,
       ).toEqual([]);
     }
+  });
+
+  it('tidak ada titik edge yang jatuh di zona legenda (data nyata)', () => {
+    // Legenda dirender di dalam SVG, di zona mati kiri bawah
+    // (BATAS_LEGENDA). Bila routing berubah dan ada edge yang masuk
+    // ke zona ini, tes ini gagal — legenda akan tertutup garis.
+    for (const e of layout.edges) {
+      const pelanggaran: string[] = [];
+      for (const p of samplingPath(e.d)) {
+        const diDalam =
+          p.x > BATAS_LEGENDA.x0 &&
+          p.x < BATAS_LEGENDA.x1 &&
+          p.y > BATAS_LEGENDA.y0 &&
+          p.y < BATAS_LEGENDA.y1;
+        if (diDalam) {
+          pelanggaran.push(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`);
+        }
+      }
+      expect(
+        pelanggaran.slice(0, 5),
+        `edge ${e.dari}→${e.ke} (${e.tipe}): ${pelanggaran.length} titik masuk zona legenda`,
+      ).toEqual([]);
+    }
+  });
+
+  it('zona legenda berada di dalam viewBox dan di bawah baris ke-2', () => {
+    expect(BATAS_LEGENDA.x0).toBeGreaterThanOrEqual(0);
+    expect(BATAS_LEGENDA.y0).toBeGreaterThanOrEqual(0);
+    expect(BATAS_LEGENDA.x1).toBeLessThanOrEqual(layout.lebar);
+    expect(BATAS_LEGENDA.y1).toBeLessThanOrEqual(layout.tinggi);
+  });
+});
+
+describe('GAYA_EDGE: hierarki visual', () => {
+  it('prasyarat paling tebal, satu_tema paling tipis', () => {
+    // Prasyarat adalah satu-satunya seri yang menonjol (jalur belajar);
+    // satu_tema paling pendiam karena informasinya sudah terbaca dari
+    // pengelompokan kolom.
+    expect(GAYA_EDGE.prasyarat.lebar).toBeGreaterThan(
+      GAYA_EDGE.dipakai_bersama.lebar,
+    );
+    expect(GAYA_EDGE.prasyarat.lebar).toBeGreaterThan(
+      GAYA_EDGE.kontras.lebar,
+    );
+    expect(GAYA_EDGE.satu_tema.lebar).toBeLessThan(
+      GAYA_EDGE.dipakai_bersama.lebar,
+    );
+    expect(GAYA_EDGE.satu_tema.lebar).toBeLessThan(GAYA_EDGE.kontras.lebar);
+    expect(GAYA_EDGE.satu_tema.lebar).toBeLessThan(
+      GAYA_EDGE.prasyarat.lebar,
+    );
   });
 });
 
