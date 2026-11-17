@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import type { GraphData } from '../src/domain';
 import {
   LEBAR_NODE,
+  PANJANG_MARKER_PANAH_KECIL,
   TINGGI_NODE,
   bungkusLabel,
   hitungLayout,
@@ -338,7 +339,9 @@ describe('hitungLayout: putaran 2 (panah, margin luar, lajur)', () => {
       titik[titik.length - 1].x - titik[titik.length - 2].x,
       titik[titik.length - 1].y - titik[titik.length - 2].y,
     );
-    // Marker panah 7px, 5,6px di belakang endpoint: 6px cukup.
+    // Ambang 6px menjaga segmen terakhir bukan stub kecil; marker normal
+    // (14px, 11,2px di belakang endpoint) menjorok melewati sudut,
+    // tetapi cek visual putaran 2 memastikan tampilannya benar.
     expect(terakhir).toBeGreaterThanOrEqual(6);
   });
 
@@ -407,6 +410,152 @@ describe('hitungLayout: putaran 2 (panah, margin luar, lajur)', () => {
           expect(jarak, `${e.dari}→${e.ke} run horizontal y=${t[i].y}`).toBeLessThanOrEqual(3.01);
         }
       }
+    }
+  });
+});
+
+describe('hitungLayout: putaran 3 (lajur per segmen, marker kecil)', () => {
+  // Segmen axis-aligned hasil uraian path `d` (geometri akhir).
+  interface SegmenAkhir {
+    edge: string;
+    vertikal: boolean;
+    tetap: number;
+    awal: number;
+    akhir: number;
+  }
+
+  function segmenLayout(): SegmenAkhir[] {
+    const hasil: SegmenAkhir[] = [];
+    for (const e of layout.edges) {
+      const t = uraianTitik(e.d);
+      for (let i = 1; i < t.length; i++) {
+        const a = t[i - 1];
+        const b = t[i];
+        if (a.x === b.x) {
+          hasil.push({
+            edge: `${e.dari}→${e.ke}`,
+            vertikal: true,
+            tetap: a.x,
+            awal: Math.min(a.y, b.y),
+            akhir: Math.max(a.y, b.y),
+          });
+        } else {
+          hasil.push({
+            edge: `${e.dari}→${e.ke}`,
+            vertikal: false,
+            tetap: a.y,
+            awal: Math.min(a.x, b.x),
+            akhir: Math.max(a.x, b.x),
+          });
+        }
+      }
+    }
+    return hasil;
+  }
+
+  // Tengah gutter antar kolom (164+148k) dan tengah node (90+148k);
+  // tengah baris (72+78r) dan tengah celah baris (111+78r).
+  const PUSAT_X = [...Array(6)]
+    .map((_, k) => 164 + 148 * k)
+    .concat([...Array(7)].map((_, k) => 90 + 148 * k));
+  const PUSAT_Y = [...Array(5)]
+    .map((_, r) => 72 + 78 * r)
+    .concat([...Array(4)].map((_, r) => 111 + 78 * r));
+
+  function grupGutter(): Map<string, SegmenAkhir[]> {
+    const grup = new Map<string, SegmenAkhir[]>();
+    for (const s of segmenLayout()) {
+      const pusat = s.vertikal ? PUSAT_X : PUSAT_Y;
+      const tengah = pusat.reduce((a, b) =>
+        Math.abs(s.tetap - a) < Math.abs(s.tetap - b) ? a : b,
+      );
+      const k = `${s.vertikal ? 'x' : 'y'}:${tengah}`;
+      const daftar = grup.get(k) ?? [];
+      daftar.push(s);
+      grup.set(k, daftar);
+    }
+    return grup;
+  }
+
+  it('tidak ada dua segmen yang berimpit di gutter yang sama', () => {
+    // Dua segmen segaris yang tumpang tindih (>0px) harus berada di
+    // lajur berbeda (jarak >0,5px; jarak lajur terkecil 1,2px).
+    let pasangan = 0;
+    for (const [k, daftar] of grupGutter()) {
+      for (let i = 0; i < daftar.length; i++) {
+        for (let j = i + 1; j < daftar.length; j++) {
+          const a = daftar[i];
+          const b = daftar[j];
+          const tumpang =
+            Math.min(a.akhir, b.akhir) - Math.max(a.awal, b.awal);
+          if (tumpang <= 0) continue;
+          pasangan++;
+          expect(
+            Math.abs(a.tetap - b.tetap),
+            `gutter ${k}: ${a.edge} dan ${b.edge} berimpit (${tumpang.toFixed(2)}px)`,
+          ).toBeGreaterThan(0.5);
+        }
+      }
+    }
+    // Sanity: ada pasangan yang tumpang tindih untuk diuji.
+    expect(pasangan).toBeGreaterThan(10);
+  });
+
+  it('lajur berpasangan mengelompok di tengah gutter (±1,5px untuk 2 segmen)', () => {
+    // Gutter berpreferensi panah memakai grid lebih lebar (C-D: 1 segmen
+    // di -2,25px), jadi tes ini hanya berlaku untuk gutter dengan tepat
+    // 2 segmen — tidak ada gutter 2-segmen berpreferensi pada data nyata.
+    let grupDua = 0;
+    for (const [k, daftar] of grupGutter()) {
+      if (daftar.length !== 2) continue;
+      grupDua++;
+      const tengah = Number(k.split(':')[1]);
+      for (const s of daftar) {
+        expect(
+          Math.abs(s.tetap - tengah),
+          `gutter ${k}: ${s.edge} di ${s.tetap}`,
+        ).toBeLessThanOrEqual(1.5);
+      }
+    }
+    expect(grupDua).toBeGreaterThan(0);
+  });
+
+  it('panah pendek memakai marker kecil dengan batang terlihat ≥3px', () => {
+    const pendek: [string, string][] = [
+      ['pestel', 'porter-5f'],
+      ['value-chain', 'vrio'],
+      ['vrio', 'core-competencies'],
+      ['lewin', 'kotter-8-step'],
+      ['balanced-scorecard', 'okrs'],
+    ];
+    expect(layout.edges.filter((e) => e.panahKecil)).toHaveLength(5);
+    for (const [dari, ke] of pendek) {
+      const edge = layout.edges.find(
+        (e) => e.dari === dari && e.ke === ke && e.panah,
+      )!;
+      expect(edge.panahKecil, `${dari}→${ke}`).toBe(true);
+      const t = uraianTitik(edge.d);
+      const panjang = t.reduce((total, p, i) => {
+        if (i === 0) return 0;
+        return total + Math.abs(p.x - t[i - 1].x) + Math.abs(p.y - t[i - 1].y);
+      }, 0);
+      // Batang yang terlihat = panjang path dikurangi segitiga marker
+      // kecil di belakang endpoint (6,4px).
+      expect(
+        panjang - PANJANG_MARKER_PANAH_KECIL,
+        `${dari}→${ke}: panjang ${panjang}`,
+      ).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('panah panjang tetap memakai marker normal', () => {
+    const edge = layout.edges.find(
+      (e) => e.dari === 'ansoff' && e.ke === 'mckinsey-3-horizons',
+    )!;
+    expect(edge.panah).toBe(true);
+    expect(edge.panahKecil).toBe(false);
+    for (const e of layout.edges) {
+      if (!e.panah) expect(e.panahKecil, `${e.dari}→${e.ke}`).toBe(false);
     }
   });
 });

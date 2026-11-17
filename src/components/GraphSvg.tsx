@@ -17,6 +17,8 @@ import {
   GAYA_EDGE,
   LABEL_EDGE,
   LEBAR_KOLOM,
+  LEBAR_MARKER_PANAH,
+  LEBAR_MARKER_PANAH_KECIL,
   MARGIN_X,
   NAMA_PENDEK_TEMA,
   URUTAN_TEMA,
@@ -56,8 +58,21 @@ export function GraphSvg(): React.JSX.Element {
               viewBox="0 0 10 10"
               refX="8"
               refY="5"
-              markerWidth="7"
-              markerHeight="7"
+              markerWidth={LEBAR_MARKER_PANAH}
+              markerHeight={LEBAR_MARKER_PANAH}
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--hijau)" />
+            </marker>
+            {/* Marker kecil untuk panah pendek (12px): segitiga 8px,
+                bukan 14px, supaya batangnya terlihat di atas segitiga. */}
+            <marker
+              id="panah-prasyarat-kecil"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth={LEBAR_MARKER_PANAH_KECIL}
+              markerHeight={LEBAR_MARKER_PANAH_KECIL}
               orient="auto-start-reverse"
             >
               <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--hijau)" />
@@ -98,7 +113,13 @@ export function GraphSvg(): React.JSX.Element {
                 stroke={gaya.stroke}
                 strokeWidth={gaya.lebar}
                 strokeDasharray={gaya.dasharray ?? undefined}
-                markerEnd={e.panah ? 'url(#panah-prasyarat)' : undefined}
+                markerEnd={
+                  e.panah
+                    ? e.panahKecil
+                      ? 'url(#panah-prasyarat-kecil)'
+                      : 'url(#panah-prasyarat)'
+                    : undefined
+                }
               />
             );
           })}
