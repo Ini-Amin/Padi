@@ -181,3 +181,32 @@ export const LABEL_STATUS: Record<StatusFramework, string> = {
   perlu_reuse: 'Perlu re-use',
   disembunyikan: 'Tidak relevan',
 };
+
+/** Hitungan framework per status untuk ringkasan progres di Peta. */
+export interface HitunganStatus {
+  dipakai: number;
+  dikuasai: number;
+  perlu_reuse: number;
+  belum_dipakai: number;
+}
+
+/**
+ * Hitung framework per status. `disembunyikan` (tidak relevan) dilipat
+ * ke `belum_dipakai`: keduanya belum pernah dipakai, dan ringkasan
+ * hanya membedakan "sedang berjalan" vs "belum mulai". Jumlah keempat
+ * hitungan selalu sama dengan jumlah framework.
+ */
+export function hitungProgres(frameworks: Framework[]): HitunganStatus {
+  const hitungan: HitunganStatus = {
+    dipakai: 0,
+    dikuasai: 0,
+    perlu_reuse: 0,
+    belum_dipakai: 0,
+  };
+  for (const f of frameworks) {
+    // `disembunyikan` dilipat ke `belum_dipakai` (lihat komentar di atas).
+    if (f.status === 'disembunyikan') hitungan.belum_dipakai++;
+    else hitungan[f.status]++;
+  }
+  return hitungan;
+}

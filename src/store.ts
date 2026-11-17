@@ -4,9 +4,15 @@
  * Masalah aktif dan profil onboarding di-persist ke localStorage (pengaturan
  * kecil, dokumen 05 §1). Data domain dari onboarding (masalah pertama)
  * hidup di Dexie, bukan di sini. Lihat db.ts.
+ *
+ * Persist dilakukan manual (bukan zustand/middleware `persist`, ~2 kB):
+ * hanya dua field yang disimpan, dan formatnya sama dengan zustand persist
+ * (`{ state, version }`) supaya instalasi lama tetap terbaca. Merge
+ * onboarding dilakukan per-field (bukan timpa mentah seperti merge
+ * default zustand), jadi instalasi lama yang menyimpan profil tanpa
+ * field baru tetap mendapat nilai awal untuk field itu.
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import {
   profilOnboardingAwal,
   type ProfilOnboarding,
@@ -29,25 +35,60 @@ interface PadiStore {
   setOnboarding: (profil: ProfilOnboarding) => void;
 }
 
-export const usePadiStore = create<PadiStore>()(
-  persist(
-    (set) => ({
-      masalahAktifId: null,
-      setMasalahAktif: (id) => set({ masalahAktifId: id }),
-      sesiBerjalanId: null,
-      setSesiBerjalan: (id) => set({ sesiBerjalanId: id }),
-      onboarding: profilOnboardingAwal(),
-      setOnboarding: (profil) => set({ onboarding: profil }),
-    }),
-    {
-      name: 'padi-store',
-      // Hanya masalah aktif + profil onboarding yang di-persist; sesi
-      // berjalan dipulihkan dari DB. Instalasi lama tanpa kunci `onboarding`
-      // memakai nilai awal (belum selesai) dari merge zustand.
-      partialize: (s) => ({
-        masalahAktifId: s.masalahAktifId,
-        onboarding: s.onboarding,
+const KUNCI_STORE = 'padi-store';
+
+type SliceTersimpan = Pick<PadiStore, 'masalahAktifId' | 'onboarding'>;
+
+/** Baca slice yang di-persist; rusak / tidak ada → kosong (pakai nilai awal). */
+function bacaTersimpan(): Partial<SliceTersimpan> {
+  try {
+    const mentah = localStorage.getItem(KUNCI_STORE);
+    if (!mentah) return {};
+    const data = JSON.parse(mentah) as { state?: unknown };
+    if (!data || typeof data !== 'object') return {};
+    const state = data.state;
+    if (!state || typeof state !== 'object') return {};
+    const hasil: Partial<SliceTersimpan> = {};
+    const { masalahAktifId, onboarding } = state as Record<string, unknown>;
+    if (typeof masalahAktifId === 'string' || masalahAktifId === null) {
+      hasil.masalahAktifId = masalahAktifId;
+    }
+    if (onboarding && typeof onboarding === 'object') {
+      hasil.onboarding = {
+        ...profilOnboardingAwal(),
+        ...(onboarding as Partial<ProfilOnboarding>),
+      };
+    }
+    return hasil;
+  } catch {
+    return {};
+  }
+}
+
+export const usePadiStore = create<PadiStore>()((set) => {
+  const tersimpan = bacaTersimpan();
+  return {
+    masalahAktifId: tersimpan.masalahAktifId ?? null,
+    setMasalahAktif: (id) => set({ masalahAktifId: id }),
+    sesiBerjalanId: null,
+    setSesiBerjalan: (id) => set({ sesiBerjalanId: id }),
+    onboarding: tersimpan.onboarding ?? profilOnboardingAwal(),
+    setOnboarding: (profil) => set({ onboarding: profil }),
+  };
+});
+
+// Tulis balik slice yang di-persist tiap ada perubahan state. Sesi
+// berjalan tidak ikut ditulis (dipulihkan dari DB, bukan localStorage).
+usePadiStore.subscribe((s) => {
+  try {
+    localStorage.setItem(
+      KUNCI_STORE,
+      JSON.stringify({
+        state: { masalahAktifId: s.masalahAktifId, onboarding: s.onboarding },
+        version: 0,
       }),
-    },
-  ),
-);
+    );
+  } catch {
+    // localStorage penuh / tidak tersedia: abaikan, state tetap jalan.
+  }
+});

@@ -673,6 +673,12 @@ pre.isi-artefak {
   fill: var(--text);
 }
 
+/* Angka hitungan progres: lebar tetap supaya tidak bergeser saat
+ * hitungan berubah (Hallmark data-viz: angka tabular). */
+.peta-progres {
+  font-variant-numeric: tabular-nums;
+}
+
 .catatan-peta-kecil {
   display: none;
 }

@@ -9,6 +9,7 @@ import {
   cekArtefakBerkualitas,
   cekSyaratDikuasai,
   cekTransfer,
+  hitungProgres,
   hitungStatus,
   masalahBerbeda,
   type KonteksStatus,
@@ -297,5 +298,58 @@ describe('property: dikuasai ⟺ ketiga syarat', () => {
         expect(cekArtefakBerkualitas(a)).toBe(l && p && r);
       }),
     );
+  });
+});
+
+describe('hitungProgres: hitungan per status untuk ringkasan Peta', () => {
+  it('semua nol saat tidak ada framework yang dipakai (keadaan awal)', () => {
+    const frameworks = [
+      buatFramework({ id: 'a' }),
+      buatFramework({ id: 'b' }),
+      buatFramework({ id: 'c' }),
+    ];
+    expect(hitungProgres(frameworks)).toEqual({
+      dipakai: 0,
+      dikuasai: 0,
+      perlu_reuse: 0,
+      belum_dipakai: 3,
+    });
+  });
+
+  it('menghitung tiap status dan jumlahnya sama dengan total', () => {
+    const frameworks = [
+      buatFramework({ id: 'a', status: 'dipakai' }),
+      buatFramework({ id: 'b', status: 'dipakai' }),
+      buatFramework({ id: 'c', status: 'dikuasai' }),
+      buatFramework({ id: 'd', status: 'perlu_reuse' }),
+      buatFramework({ id: 'e', status: 'belum_dipakai' }),
+    ];
+    const h = hitungProgres(frameworks);
+    expect(h).toEqual({
+      dipakai: 2,
+      dikuasai: 1,
+      perlu_reuse: 1,
+      belum_dipakai: 1,
+    });
+    expect(h.dipakai + h.dikuasai + h.perlu_reuse + h.belum_dipakai).toBe(
+      frameworks.length,
+    );
+  });
+
+  it('disembunyikan dilipat ke belum_dipakai', () => {
+    const frameworks = [
+      buatFramework({ id: 'a', status: 'disembunyikan' }),
+      buatFramework({ id: 'b', status: 'belum_dipakai' }),
+    ];
+    expect(hitungProgres(frameworks).belum_dipakai).toBe(2);
+  });
+
+  it('daftar kosong menghasilkan semua nol', () => {
+    expect(hitungProgres([])).toEqual({
+      dipakai: 0,
+      dikuasai: 0,
+      perlu_reuse: 0,
+      belum_dipakai: 0,
+    });
   });
 });

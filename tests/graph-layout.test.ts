@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import type { GraphData } from '../src/domain';
 import {
   BATAS_LEGENDA,
+  BATAS_PROGRES,
   GAYA_EDGE,
   LEBAR_NODE,
   PANJANG_MARKER_PANAH_KECIL,
@@ -341,6 +342,48 @@ describe('hitungLayout: edge hanya lewat gutter (property test)', () => {
     expect(BATAS_LEGENDA.x1).toBeLessThanOrEqual(layout.lebar);
     expect(BATAS_LEGENDA.y1).toBeLessThanOrEqual(layout.tinggi);
   });
+
+  it('tidak ada titik edge yang jatuh di zona progres (data nyata)', () => {
+    // Ringkasan progres dirender di dalam SVG, di zona mati kanan bawah
+    // (BATAS_PROGRES). Sama seperti zona legenda: bila routing berubah
+    // dan ada edge yang masuk, tes ini gagal.
+    for (const e of layout.edges) {
+      const pelanggaran: string[] = [];
+      for (const p of samplingPath(e.d)) {
+        const diDalam =
+          p.x > BATAS_PROGRES.x0 &&
+          p.x < BATAS_PROGRES.x1 &&
+          p.y > BATAS_PROGRES.y0 &&
+          p.y < BATAS_PROGRES.y1;
+        if (diDalam) {
+          pelanggaran.push(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`);
+        }
+      }
+      expect(
+        pelanggaran.slice(0, 5),
+        `edge ${e.dari}→${e.ke} (${e.tipe}): ${pelanggaran.length} titik masuk zona progres`,
+      ).toEqual([]);
+    }
+  });
+
+  it('zona progres berada di dalam viewBox dan bebas node', () => {
+    expect(BATAS_PROGRES.x0).toBeGreaterThanOrEqual(0);
+    expect(BATAS_PROGRES.y0).toBeGreaterThanOrEqual(0);
+    expect(BATAS_PROGRES.x1).toBeLessThanOrEqual(layout.lebar);
+    expect(BATAS_PROGRES.y1).toBeLessThanOrEqual(layout.tinggi);
+    // Zona di kanan Kanban (tepi kanan x=750) dan di bawah ADKAR
+    // (tepi bawah y=338); tidak ada node yang tumpang tindih.
+    for (const n of layout.nodes) {
+      const tumpang =
+        n.x < BATAS_PROGRES.x1 &&
+        n.x + n.lebar > BATAS_PROGRES.x0 &&
+        n.y < BATAS_PROGRES.y1 &&
+        n.y + n.tinggi > BATAS_PROGRES.y0;
+      expect(tumpang, `node ${n.id} tumpang tindih zona progres`).toBe(
+        false,
+      );
+    }
+  });
 });
 
 describe('GAYA_EDGE: hierarki visual', () => {
@@ -555,6 +598,30 @@ describe('hitungLayout: putaran 3 (lajur per segmen, marker kecil)', () => {
     }
     // Sanity: ada pasangan yang tumpang tindih untuk diuji.
     expect(pasangan).toBeGreaterThan(10);
+  });
+
+  it('pewarnaan dua-pass: lajur A-B 4, E-F 3, F-G 2 (optimal)', () => {
+    // Pass 1 (interval diperlebar ±3px) membuat lajur yang sebenarnya
+    // tidak perlu: A-B 5, E-F 4, F-G 3. Pass 2 mengukur ulang dari
+    // geometri final tanpa perluasan; jumlah lajur kini sama dengan
+    // kedalaman tumpang tindih akhir (tidak bisa kurang lagi tanpa
+    // mengubah rute).
+    const grup = grupGutter();
+    const lajur = (k: string): number[] => {
+      const daftar = grup.get(k);
+      expect(daftar, `gutter ${k} tidak ditemukan`).toBeDefined();
+      return [...new Set(daftar!.map((s) => s.tetap))].sort((a, b) => a - b);
+    };
+    const ab = lajur('x:164');
+    const ef = lajur('x:756');
+    const fg = lajur('x:904');
+    expect(ab).toHaveLength(4);
+    expect(ef).toHaveLength(3);
+    expect(fg).toHaveLength(2);
+    // Jarak antar lajur A-B kini 2px (sebelumnya 1,5px).
+    for (let i = 1; i < ab.length; i++) {
+      expect(ab[i] - ab[i - 1]).toBeGreaterThanOrEqual(2);
+    }
   });
 
   it('lajur berpasangan mengelompok di tengah gutter (±1,5px untuk 2 segmen)', () => {

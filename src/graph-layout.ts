@@ -21,21 +21,26 @@
  *   (tengah celah 14px): keluar, jog vertikal ke celah baris, jalan
  *   horizontal di celah itu, jog vertikal ke baris target, masuk.
  *
- * Lajur dihitung PER SEGMEN PER GUTTER: untuk tiap gutter (sumbu +
- * koordinat tetap), semua segmen yang berjalan di sana diwarnai dengan
- * pewarnaan interval greedy deterministik, jadi dua segmen yang
- * tumpang tindih di satu gutter selalu mendapat lajur berbeda, sementara
- * segmen yang tidak tumpang tindih boleh berbagi lajur. Lajur mengelompok
- * di tengah gutter: span = min(6, 2,25×(N−1)) px untuk N lajur
- * (N=2 → ±1,13px, N=3 → ±2,25px, N≥4 → ±3px), jadi tidak ada garis yang
- * lebih dekat dari 2px ke tepi kartu. Edge berpanah yang berjog meminta
- * lajur ekstrem di gutter segmen vertikal sebelum segmen terakhirnya,
- * supaya segmen terakhirnya ≥ 6px; gutter yang memuat segmen
- * berpreferensi memakai grid minimal 3 lajur. Batas geometri: stub
- * horizontal maksimal 9px (gutter 12px) dan stub vertikal maksimal 10px
- * (celah 14px), jadi segmen pertama/terakhir edge berjog tidak bisa
- * 10px semua; yang dijamin adalah tidak ada segmen berbalik arah dan
- * segmen terakhir panah ≥ 6px.
+ * Lajur dihitung PER SEGMEN PER GUTTER dalam DUA PASS: pass 1 mewarnai
+ * dari interval offset-0 yang diperlebar ±3px (aman, tapi konservatif);
+ * pass 2 mengukur ulang interval dari geometri final pass 1 tanpa
+ * perluasan, lalu mewarnai ulang — hanya segmen yang benar-benar
+ * tumpang tindih di geometri akhir yang mendapat lajur berbeda
+ * (gutter A-B: 5→4 lajur, E-F: 4→3, F-G: 3→2). Untuk tiap gutter
+ * (sumbu + koordinat tetap), semua segmen yang berjalan di sana
+ * diwarnai dengan pewarnaan interval greedy deterministik, jadi dua
+ * segmen yang tumpang tindih di satu gutter selalu mendapat lajur
+ * berbeda, sementara segmen yang tidak tumpang tindih boleh berbagi
+ * lajur. Lajur mengelompok di tengah gutter: span = min(6, 2,25×(N−1))
+ * px untuk N lajur (N=2 → ±1,13px, N=3 → ±2,25px, N≥4 → ±3px), jadi
+ * tidak ada garis yang lebih dekat dari 2px ke tepi kartu. Edge
+ * berpanah yang berjog meminta lajur ekstrem di gutter segmen vertikal
+ * sebelum segmen terakhirnya, supaya segmen terakhirnya ≥ 6px; gutter
+ * yang memuat segmen berpreferensi memakai grid minimal 3 lajur. Batas
+ * geometri: stub horizontal maksimal 9px (gutter 12px) dan stub
+ * vertikal maksimal 10px (celah 14px), jadi segmen pertama/terakhir
+ * edge berjog tidak bisa 10px semua; yang dijamin adalah tidak ada
+ * segmen berbalik arah dan segmen terakhir panah ≥ 6px.
  */
 import type { Edge, Framework, StatusFramework, Tema, TipeEdge } from './domain';
 
@@ -167,6 +172,16 @@ export const GAYA_EDGE: Record<TipeEdge, GayaEdge> = {
  * bersama peta. Ubah routing? Tes akan gagal bila ada edge yang masuk.
  */
 export const BATAS_LEGENDA = { x0: 16, y0: 285, x1: 460, y1: 420 };
+
+/**
+ * Batas zona ringkasan progres di dalam SVG (kanan bawah: kolom F baris
+ * 4 dan kolom G baris 3-4 kosong). Diverifikasi bebas edge DAN bebas node
+ * oleh tes, seperti zona legenda. Isinya massa nyata (hitungan framework
+ * per status + stacked bar), bukan copy — Hallmark gate 77/79.
+ * x0 = 766 memberi jarak 9-10px dari run E-F terdekat (lean-startup→
+ * kanban, x=756); y0 = 344 memberi jarak 6px dari bawah ADKAR (y=338).
+ */
+export const BATAS_PROGRES = { x0: 766, y0: 344, x1: 1052, y1: 420 };
 
 export const LABEL_EDGE: Record<TipeEdge, string> = {
   prasyarat: 'Prasyarat',
@@ -519,18 +534,23 @@ function bulat2(v: number): number {
 }
 
 /**
- * Perluasan interval untuk pewarnaan lajur (px). Sudut path bergeser
- * mengikuti offset segmen tetangganya (maksimal 3px), jadi interval
- * segmen pada offset 0 diperlebar 3px di tiap ujung saat menguji
- * tumpang tindih — dua segmen yang hanya bersentuhan di offset 0 tetap
- * mendapat lajur berbeda bila sudutnya bisa bergeser sampai tumpang
- * tindih di geometri akhir.
+ * Perluasan interval untuk pewarnaan lajur pass 1 (px). Sudut path
+ * bergeser mengikuti offset segmen tetangganya (maksimal 3px), jadi
+ * interval segmen pada offset 0 diperlebar 3px di tiap ujung saat
+ * menguji tumpang tindih — dua segmen yang hanya bersentuhan di offset
+ * 0 tetap mendapat lajur berbeda bila sudutnya bisa bergeser sampai
+ * tumpang tindih di geometri akhir. Perluasan ini konservatif: ia
+ * membuat lajur yang sebenarnya tidak perlu (gutter A-B: 5 lajur
+ * padahal kedalaman tumpang tindih akhirnya hanya 4). Karena itu
+ * hitungOffsetSegmen menjalankan pass 2 yang mengukur ulang interval
+ * dari geometri final pass 1 tanpa perluasan.
  */
 const PERLUASAN_INTERVAL = 3;
 
 /**
- * Hitung offset lajur PER SEGMEN PER GUTTER. Mengembalikan offset tegak
- * lurus tiap segmen: offset[edge][segmen].
+ * Pewarnaan lajur PER SEGMEN PER GUTTER dari interval yang diukur
+ * pemanggil. Mengembalikan offset tegak lurus tiap segmen:
+ * offset[edge][segmen].
  *
  * Tiap grup gutter (sumbu + koordinat tetap) diwarnai terpisah dengan
  * pewarnaan interval greedy deterministik (urut awal interval, lalu
@@ -548,7 +568,13 @@ const PERLUASAN_INTERVAL = 3;
  * keduanya duduk di lajur ekstrem (hanya satu yang mendapatnya);
  * kasus itu tidak terjadi pada data nyata maupun fixture.
  */
-function hitungOffsetSegmen(rute: RuteEdge[]): number[][] {
+function warnaiLajur(
+  rute: RuteEdge[],
+  ukur: (r: RuteEdge, edge: number, segmen: number) => {
+    awal: number;
+    akhir: number;
+  },
+): number[][] {
   const kunci = (r: RuteEdge): string => `${r.dari}|${r.ke}|${r.tipe}`;
   const offset: number[][] = rute.map((r) =>
     new Array<number>(r.segmen.length).fill(0),
@@ -559,13 +585,12 @@ function hitungOffsetSegmen(rute: RuteEdge[]): number[][] {
   rute.forEach((r, edge) => {
     r.segmen.forEach((s, segmen) => {
       const kritis = r.preferensi !== 0 && segmen === r.segmen.length - 2;
+      const { awal, akhir } = ukur(r, edge, segmen);
       const entri: SegmenLajur = {
         edge,
         segmen,
-        // Interval diperlebar (lihat PERLUASAN_INTERVAL): pewarnaan
-        // menguji tumpang tindih pada geometri akhir, bukan offset 0.
-        awal: Math.min(s.dari, s.ke) - PERLUASAN_INTERVAL,
-        akhir: Math.max(s.dari, s.ke) + PERLUASAN_INTERVAL,
+        awal,
+        akhir,
         preferensi: kritis ? r.preferensi : 0,
         lajur: -1,
       };
@@ -649,6 +674,46 @@ function hitungOffsetSegmen(rute: RuteEdge[]): number[][] {
     }
   }
   return offset;
+}
+
+/**
+ * Hitung offset lajur dalam DUA PASS.
+ *
+ * Pass 1 mewarnai dari interval offset-0 yang diperlebar ±3px
+ * (PERLUASAN_INTERVAL): aman, tapi konservatif — lajur yang
+ * sebenarnya tidak perlu ikut dibuat (gutter A-B: 5 lajur padahal
+ * kedalaman tumpang tindih akhirnya hanya 4; E-F: 4 padahal 3;
+ * F-G: 3 padahal 2).
+ *
+ * Pass 2 menerapkan offset pass 1, mengukur interval SEBENARNYA dari
+ * geometri final itu (tanpa perluasan), lalu mewarnai ulang. Dua
+ * segmen yang berbagi lajur di pass 2 benar-benar tidak tumpang
+ * tindih di geometri pass 1; pergeseran sudut antar-pass kecil
+ * (≤2,25px, dari perubahan lajur segmen horizontal) dan celah kritis
+ * (2,25px) dipertahankan karena lajur segmen horizontal yang
+ * menentukan ujung-ujung itu tidak berubah antar-pass. Hasil akhir
+ * tetap dijaga tes geometri ("tidak ada dua segmen yang berimpit"
+ * pada geometri final): bila data berubah dan pass 2 menciptakan
+ * impitan, tes itu gagal dan skema ini perlu ditinjau.
+ *
+ * Hasil pada data nyata: A-B 5→4 lajur (jarak 1,5→2px), E-F 4→3,
+ * F-G 3→2 — tanpa mengubah layout, viewBox, atau rute apa pun.
+ */
+function hitungOffsetSegmen(rute: RuteEdge[]): number[][] {
+  const offset1 = warnaiLajur(rute, (r, _edge, segmen) => {
+    const s = r.segmen[segmen];
+    return {
+      awal: Math.min(s.dari, s.ke) - PERLUASAN_INTERVAL,
+      akhir: Math.max(s.dari, s.ke) + PERLUASAN_INTERVAL,
+    };
+  });
+  const final = rute.map((r, i) => terapkanOffsetSegmen(r.titik, offset1[i]));
+  return warnaiLajur(rute, (r, edge, segmen) => {
+    const [a, b] = [final[edge][segmen], final[edge][segmen + 1]];
+    const [p, q] =
+      r.segmen[segmen].sumbu === 'x' ? [a.y, b.y] : [a.x, b.x];
+    return { awal: Math.min(p, q), akhir: Math.max(p, q) };
+  });
 }
 
 /**

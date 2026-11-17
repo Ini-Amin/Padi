@@ -22,11 +22,12 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { LABEL_STATUS } from '../status';
+import { LABEL_STATUS, hitungProgres } from '../status';
 import type { TipeEdge } from '../domain';
 import { useGerakanAktif } from '../gerakan';
 import {
   BATAS_LEGENDA,
+  BATAS_PROGRES,
   DESKRIPSI_EDGE,
   GAYA_EDGE,
   LABEL_EDGE,
@@ -51,6 +52,18 @@ const URUTAN_LEGENDA: TipeEdge[] = [
 
 /** Tepi kiri legenda di dalam SVG (sama dengan tepi kiri kolom A). */
 const LEGENDA_X = BATAS_LEGENDA.x0;
+
+/**
+ * Baris ringkasan progres (stacked bar + hitungan): urutan = urutan
+ * segmen bar (kiri ke kanan) dan urutan baris hitungan (2 kolom × 2
+ * baris). `dx`/`y` relatif terhadap BATAS_PROGRES.
+ */
+const BARIS_PROGRES = [
+  { status: 'dipakai', label: 'dipakai', dx: 0, y: 396 },
+  { status: 'dikuasai', label: 'dikuasai', dx: 140, y: 396 },
+  { status: 'perlu_reuse', label: 'perlu re-use', dx: 0, y: 412 },
+  { status: 'belum_dipakai', label: 'belum dipakai', dx: 140, y: 412 },
+] as const;
 
 export function GraphSvg(): React.JSX.Element {
   const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
@@ -84,6 +97,24 @@ export function GraphSvg(): React.JSX.Element {
   const jalur = dipilihId ? jalurPrasyarat(edges, dipilihId) : null;
   const nama = (id: string): string =>
     frameworks.find((f) => f.id === id)?.nama ?? id;
+
+  // Ringkasan progres (stacked bar di zona kanan bawah): segmen
+  // dihitung dari status live; bila belum ada framework, lebar 0
+  // (total || 1 menjaga pembagian tetap terdefinisi).
+  const hitungan = hitungProgres(frameworks);
+  const totalProgres = frameworks.length || 1;
+  const lebarBarProgres = BATAS_PROGRES.x1 - BATAS_PROGRES.x0;
+  const barisProgres = BARIS_PROGRES.map(({ status, label, dx, y }, i, arr) => {
+    const jumlah = hitungan[status];
+    // Posisi awal segmen = jumlah kumulatif baris sebelumnya (n=4,
+    // O(n²) tidak masalah; tanpa variabel `let` yang dimutasi di map).
+    const awal = arr
+      .slice(0, i)
+      .reduce((s, b) => s + hitungan[b.status], 0);
+    const x = BATAS_PROGRES.x0 + (awal / totalProgres) * lebarBarProgres;
+    const lebar = (jumlah / totalProgres) * lebarBarProgres;
+    return { status, label, dx, y, jumlah, x, lebar };
+  });
 
   /** Pilih node (klik ulang membatalkan); pindah pilihan tidak menutup mode jalur. */
   const pilih = (id: string): void => {
@@ -315,6 +346,40 @@ export function GraphSvg(): React.JSX.Element {
             <text x={LEGENDA_X + 36} y={392}>
               Titik warna: pernah dipakai, dikuasai, perlu re-use
             </text>
+          </g>
+
+          {/* Ringkasan progres di zona mati kanan bawah (BATAS_PROGRES,
+              diverifikasi bebas edge dan bebas node oleh tes): stacked
+              bar + hitungan per status dari data live, bukan dekorasi. */}
+          <g className="peta-legenda-teks peta-progres">
+            <text x={BATAS_PROGRES.x0} y={360} className="peta-kepala-tema">
+              Progres
+            </text>
+            {barisProgres
+              .filter((b) => b.lebar > 0)
+              .map((b) => (
+                <rect
+                  key={b.status}
+                  x={b.x}
+                  y={368}
+                  width={b.lebar}
+                  height={10}
+                  fill={WARNA_DOT_STATUS[b.status]}
+                />
+              ))}
+            {barisProgres.map((b) => (
+              <g key={b.status}>
+                <circle
+                  cx={BATAS_PROGRES.x0 + b.dx + 4}
+                  cy={b.y - 4}
+                  r={4}
+                  fill={WARNA_DOT_STATUS[b.status]}
+                />
+                <text x={BATAS_PROGRES.x0 + b.dx + 12} y={b.y}>
+                  {b.jumlah} {b.label}
+                </text>
+              </g>
+            ))}
           </g>
         </svg>
       </div>
