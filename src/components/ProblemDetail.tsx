@@ -33,7 +33,16 @@ export function ProblemDetail({ id }: { id: string }): React.JSX.Element {
   ) {
     return <p className="muted">Memuat…</p>;
   }
-  if (!masalah) return <p>Masalah tidak ditemukan.</p>;
+  if (!masalah) {
+    return (
+      <div>
+        <p>Masalah tidak ditemukan.</p>
+        <a className="tombol-garis" href="#/">
+          Kembali ke Beranda
+        </a>
+      </div>
+    );
+  }
 
   const frameworkById = new Map(frameworks.map((f) => [f.id, f]));
   const dipakaiIds = new Set(semuaPemakaian.map((p) => p.framework_id));

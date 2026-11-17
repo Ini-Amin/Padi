@@ -1,7 +1,7 @@
 /**
- * Guided discovery — JALUR CADANGAN (PRD M6), bukan jalur utama.
+ * Guided discovery: JALUR CADANGAN (PRD M6), bukan jalur utama.
  * Untuk user yang datang tanpa masalah nyata. Aturan keras: discovery
- * TIDAK BOLEH berujung "modul selesai" — satu-satunya ujung yang sah adalah
+ * TIDAK BOLEH berujung "modul selesai". Satu-satunya ujung yang sah adalah
  * masalah + ranking (alur problem-first).
  */
 import { useState } from 'react';
@@ -64,21 +64,25 @@ export function Discovery(): React.JSX.Element {
 
   return (
     <div>
-      <p className="indikator-langkah">Jalur cadangan — menemukan masalah</p>
+      <p className="indikator-langkah">Jalur cadangan: menemukan masalah</p>
 
       {langkah === 0 && (
         <>
           <h1>Di area apa kamu sering bingung mengambil keputusan?</h1>
-          {AREA.map((a) => (
-            <button
-              key={a}
-              type="button"
-              className={`pilihan${area === a ? ' terpilih' : ''}`}
-              onClick={() => setArea(a)}
-            >
-              {a}
-            </button>
-          ))}
+          <div role="radiogroup" aria-label="Area yang sering membingungkan">
+            {AREA.map((a) => (
+              <button
+                key={a}
+                type="button"
+                role="radio"
+                aria-checked={area === a}
+                className={`pilihan${area === a ? ' terpilih' : ''}`}
+                onClick={() => setArea(a)}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
           <div className="baris-tombol">
             <button
               className="tombol-utama"
@@ -100,7 +104,7 @@ export function Discovery(): React.JSX.Element {
           <h1>
             Di area {area.toLowerCase()}, apa yang paling sering membingungkanmu?
           </h1>
-          <p className="muted">Satu kalimat cukup — ini akan menjadi masalahmu.</p>
+          <p className="muted">Satu kalimat cukup. Ini akan menjadi masalahmu.</p>
           <label htmlFor="bingung">Yang membingungkan</label>
           <textarea
             id="bingung"
@@ -140,12 +144,13 @@ export function Discovery(): React.JSX.Element {
             onChange={(e) => setJudul(e.target.value)}
           />
           <h2>Apa inti masalah ini?</h2>
-          <p className="muted kecil">Opsional — membantu Padi memilih framework.</p>
+          <p className="muted kecil">Opsional. Membantu Padi memilih framework.</p>
           <div>
             {JENIS_MASALAH.map((k) => (
               <button
                 key={k}
                 type="button"
+                aria-pressed={jenis.has(k)}
                 className={`chip${jenis.has(k) ? ' terpilih' : ''}`}
                 onClick={() => toggleJenis(k)}
               >

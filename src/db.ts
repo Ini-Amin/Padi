@@ -1,12 +1,12 @@
 /**
- * Penyimpanan local-first via Dexie (IndexedDB) — dokumen 05 §3.
+ * Penyimpanan local-first via Dexie (IndexedDB) (dokumen 05 §3).
  * Database `padi`, versi 1. Satu object store per entitas (dokumen 03 §2).
  *
  * Aturan yang ditegakkan di sini:
  * - Seed memakai upsert by `id`: konten yang sudah diedit user
  *   (`diedit_user = true`) TIDAK PERNAH ditimpa seed.
  * - Status framework hanya ditulis oleh `refreshFrameworkStatus()`, yang
- *   memanggil `hitungStatus()` murni — tidak ada penulis status lain.
+ *   memanggil `hitungStatus()` murni, tidak ada penulis status lain.
  * - Satu transaksi per operasi; semua `await` di luar transaksi.
  * - `total_xp` dihitung dari xp_ledger, bukan disimpan.
  */
@@ -35,7 +35,6 @@ import { jadwalDariPemakaian, jadwalBerikutnya, jadwalTambahan } from './schedul
 import { hitungStatus } from './status';
 import { sesiSelesai, xpUntukSesi } from './gamification';
 import {
-  cariFrameworkDariTeks,
   masalahDariJawaban,
   type JawabanOnboarding,
 } from './onboarding';
@@ -81,7 +80,7 @@ function uuid(): string {
 
 /**
  * Seed dari graph.json (sumber kebenaran konten). Upsert by id; konten yang
- * diedit user tidak ditimpa. Idempotent — aman dipanggil setiap buka app.
+ * diedit user tidak ditimpa. Idempotent: aman dipanggil setiap buka app.
  */
 export async function seedDatabase(): Promise<void> {
   const res = await fetch(`${import.meta.env.BASE_URL}data/graph.json`);
@@ -91,7 +90,7 @@ export async function seedDatabase(): Promise<void> {
     for (const node of data.nodes) {
       const ada = await db.frameworks.get(node.id);
       if (!ada) {
-        // graph.json (seed konten) belum punya `dikenal_pada` — default null.
+        // graph.json (seed konten) belum punya `dikenal_pada`, default null.
         await db.frameworks.add({ ...node, dikenal_pada: null });
       } else if (!ada.diedit_user) {
         // Perbaikan konten pasca-rilis: timpa konten seed, pertahankan progres.
@@ -202,7 +201,7 @@ export async function buatMasalah(input: {
   return masalah;
 }
 
-/** Mulai sesi baru (draft — `selesai` false sampai dinilai). */
+/** Mulai sesi baru (draft, `selesai` false sampai dinilai). */
 export async function mulaiSesi(input: {
   framework_id: string;
   masalah_id: string | null;
@@ -230,7 +229,7 @@ export async function mulaiSesi(input: {
 /** Input penilaian sesi (layar penilaian terpisah, dokumen 04 §3.2). */
 export interface PenilaianSesi {
   skor: Skor;
-  /** Artefak opsional — tanpa artefak, sesi penerapan tetap bisa selesai via durasi. */
+  /** Artefak opsional. Tanpa artefak, sesi penerapan tetap bisa selesai via durasi. */
   artefak?: {
     judul: string;
     isi: string;
@@ -267,7 +266,7 @@ export async function selesaikanSesi(
     'rw',
     [db.sesi, db.artefak, db.pemakaian, db.jadwal_reuse, db.xp_ledger, db.progres, db.frameworks],
     async () => {
-      // 1. Artefak (jika ada) — kualitas_terpenuhi dihitung, bukan diinput.
+      // 1. Artefak (jika ada): kualitas_terpenuhi dihitung, bukan diinput.
       if (penilaian.artefak && sesi.masalah_id) {
         artefakBerkualitas =
           penilaian.artefak.kualitas_lengkap &&
@@ -474,35 +473,28 @@ export async function simpanKapanTidakPakai(
 }
 
 /**
- * Tandai framework "sudah dikenal" (onboarding Q3). Bukan status — status
- * tetap dihitung dari pemakaian — jadi tidak memanggil refreshFrameworkStatus.
- * Idempotent: memanggil dua kali hanya memperbarui tanggalnya.
+ * Tandai framework "sudah dikenal" (dari detail framework). Bukan status.
+ * Status tetap dihitung dari pemakaian, jadi tidak memanggil
+ * refreshFrameworkStatus. Idempotent: memanggil dua kali hanya memperbarui
+ * tanggalnya.
  */
 export async function tandaiDikenal(frameworkId: string): Promise<void> {
   await db.frameworks.update(frameworkId, { dikenal_pada: hariIni() });
 }
 
 /**
- * Terapkan jawaban onboarding ke domain (PRD M0): buat masalah dari Q1
- * (jika dijawab) dan tandai framework dari Q3 (jika cocok dengan katalog).
- * Jawaban mentah + flag selesai disimpan terpisah di store.ts.
- * Idempotensi penyelesaian dijaga di komponen lewat `bolehSelesaikan()` —
- * fungsi ini sendiri sengaja tidak tahu apakah onboarding sudah selesai.
+ * Terapkan jawaban onboarding ke domain (PRD M0): buat masalah dari
+ * langkah pertama (jika dijawab). Jawaban mentah + flag selesai disimpan
+ * terpisah di store.ts. Idempotensi penyelesaian dijaga di komponen lewat
+ * `bolehSelesaikan()`. Fungsi ini sendiri sengaja tidak tahu apakah
+ * onboarding sudah selesai.
  */
 export async function terapkanHasilOnboarding(
   jawaban: JawabanOnboarding,
-  frameworks: Framework[],
-): Promise<{ masalah: Masalah | null; frameworkDikenalId: string | null }> {
+): Promise<{ masalah: Masalah | null }> {
   const inputMasalah = masalahDariJawaban(jawaban);
   const masalah = inputMasalah ? await buatMasalah(inputMasalah) : null;
-
-  const cocok =
-    jawaban.frameworkDikenal !== null
-      ? cariFrameworkDariTeks(jawaban.frameworkDikenal, frameworks)
-      : null;
-  if (cocok) await tandaiDikenal(cocok.id);
-
-  return { masalah, frameworkDikenalId: cocok?.id ?? null };
+  return { masalah };
 }
 
 /** Perbarui status re-use yang sudah lewat jatuh tempo menjadi `terlewat`. */
@@ -518,7 +510,7 @@ export async function tandaiReuseTerlewat(): Promise<void> {
   }
 }
 
-/** Ekspor semua data (whitelist field — tidak ada kunci API di app ini). */
+/** Ekspor semua data (whitelist field, tidak ada kunci API di app ini). */
 export async function eksporData(): Promise<string> {
   const data = {
     versi: 1,

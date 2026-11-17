@@ -1,5 +1,5 @@
 /**
- * Uji tata letak graph SVG (M3) — modul murni graph-layout.ts.
+ * Uji tata letak graph SVG (M3): modul murni graph-layout.ts.
  * Yang diuji adalah model render (posisi node + path edge) yang dipakai
  * GraphSvg: jumlah node/edge harus sama dengan graph.json, node tidak boleh
  * tumpang tindih, dan edge paralel harus tergambar terpisah.
@@ -25,7 +25,7 @@ const graph = JSON.parse(
 
 const layout = hitungLayout(graph.nodes, graph.edges);
 
-describe('hitungLayout — jumlah dan kelengkapan', () => {
+describe('hitungLayout: jumlah dan kelengkapan', () => {
   it('merender 22 node dan 35 edge, sama dengan graph.json', () => {
     expect(layout.nodes).toHaveLength(graph.nodes.length);
     expect(layout.nodes).toHaveLength(22);
@@ -56,7 +56,7 @@ describe('hitungLayout — jumlah dan kelengkapan', () => {
   });
 });
 
-describe('hitungLayout — geometri', () => {
+describe('hitungLayout: geometri', () => {
   it('semua node berada di dalam viewBox', () => {
     for (const n of layout.nodes) {
       expect(n.x).toBeGreaterThanOrEqual(0);
@@ -101,7 +101,7 @@ describe('hitungLayout — geometri', () => {
   });
 });
 
-describe('hitungLayout — edge', () => {
+describe('hitungLayout: edge', () => {
   it('hanya edge prasyarat yang berpanah', () => {
     for (const e of layout.edges) {
       expect(e.panah).toBe(e.tipe === 'prasyarat');

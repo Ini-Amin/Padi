@@ -1,11 +1,12 @@
 /**
- * Graph SVG statis (M3) — visualisasi 22 framework / 35 edge, satu kolom
+ * Graph SVG statis (M3): visualisasi 22 framework / 35 edge, satu kolom
  * per tema. SVG murni tanpa library graph (tetap ramping, dokumen 05).
  * Klik node membuka detail framework. Daftar bertema di bawahnya tetap ada
  * sebagai fallback aksesibilitas (dokumen 04 §3.3).
  *
- * Mobile: SVG punya lebar minimum 700px di dalam wadah yang bisa digeser
- * horizontal — halaman tidak pernah meluber, dan label tetap terbaca.
+ * Layar sempit: SVG disembunyikan di bawah 720px (CSS) dan daftar bertema
+ * menjadi tampilan utama. Di layar lebar, wadah Peta melebar sampai 1080px
+ * agar node mencapai target sentuh 44px dan label terbaca.
  */
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
@@ -46,8 +47,8 @@ export function GraphSvg(): React.JSX.Element {
         <svg
           className="peta-svg"
           viewBox={layout.viewBox}
-          role="img"
-          aria-label={`Peta ${layout.nodes.length} framework dalam ${layout.edges.length} relasi, dikelompokkan per tema. Klik node untuk melihat detail framework.`}
+          role="group"
+          aria-label={`Peta ${layout.nodes.length} framework dalam ${layout.edges.length} relasi, dikelompokkan per tema.`}
         >
           <defs>
             <marker
@@ -112,10 +113,10 @@ export function GraphSvg(): React.JSX.Element {
                 key={n.id}
                 href={`#/framework/${n.id}`}
                 className="peta-node"
-                aria-label={`${n.nama} — ${LABEL_STATUS[n.status]}`}
+                aria-label={`${n.nama}: ${LABEL_STATUS[n.status]}`}
               >
                 <title>
-                  {n.nama} — {LABEL_STATUS[n.status]}
+                  {n.nama}: {LABEL_STATUS[n.status]}
                 </title>
                 <rect
                   x={n.x}
@@ -166,7 +167,7 @@ export function GraphSvg(): React.JSX.Element {
               </svg>
               <span>
                 <strong>{LABEL_EDGE[tipe]}</strong>{' '}
-                <span className="muted kecil">— {DESKRIPSI_EDGE[tipe]}</span>
+                <span className="muted kecil">: {DESKRIPSI_EDGE[tipe]}</span>
               </span>
             </div>
           );

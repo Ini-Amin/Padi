@@ -1,5 +1,5 @@
 /**
- * Uji matcher — ranking kriteria + alasan + slot eksplorasi (dokumen 07 §3.1).
+ * Uji matcher: ranking kriteria + alasan + slot eksplorasi (dokumen 07 §3.1).
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';

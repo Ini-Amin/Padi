@@ -1,13 +1,13 @@
 /**
- * Status framework — modul murni, SATU-SATUNYA tempat logika status
+ * Status framework: modul murni, SATU-SATUNYA tempat logika status
  * (dokumen 03 §2.3, fungsi `hitungStatus`).
  *
  * Definisi "dikuasai" v0.5 (tiga syarat, semuanya wajib):
- * (a) Transfer — dipakai untuk ≥2 masalah berbeda dengan skor ≥2.
- * (b) Artefak berkualitas — ≥1 artefak dengan checklist lengkap.
- * (c) Kemandirian — kolom `kapan_tidak_pakai` terisi.
+ * (a) Transfer: dipakai untuk ≥2 masalah berbeda dengan skor ≥2.
+ * (b) Artefak berkualitas: ≥1 artefak dengan checklist lengkap.
+ * (c) Kemandirian: kolom `kapan_tidak_pakai` terisi.
  *
- * Catatan: re-use H+30 BUKAN syarat "dikuasai" di v0.5 (US-2.5) — H+30
+ * Catatan: re-use H+30 BUKAN syarat "dikuasai" di v0.5 (US-2.5). H+30
  * adalah ukuran retensi, bukan syarat status. Definisi dua tingkat v0.4
  * (termasuk lencana H+30) sudah dihapus oleh pivot.
  */
@@ -33,7 +33,7 @@ function kunciKriteria(kriteria: string[]): string {
 
 /**
  * Dua masalah dihitung BERBEDA jika judul ATAU kriterianya berbeda
- * (dokumen 03 §7). Masalah dengan judul dan kriteria identik dihitung satu —
+ * (dokumen 03 §7). Masalah dengan judul dan kriteria identik dihitung satu:
  * mencegah "transfer palsu" dari masalah yang sama ditulis ulang.
  */
 export function masalahBerbeda(a: Masalah, b: Masalah): boolean {
@@ -64,7 +64,7 @@ export function cekTransfer(
   return false;
 }
 
-/** Jumlah masalah berbeda (skor ≥2) — untuk tampilan indikator progres. */
+/** Jumlah masalah berbeda (skor ≥2), untuk tampilan indikator progres. */
 export function hitungMasalahBerbeda(
   pemakaian: Pemakaian[],
   masalahById: ReadonlyMap<string, Masalah>,
@@ -93,9 +93,10 @@ export function cekKemandirian(f: Framework): boolean {
 
 /**
  * Framework adalah "materi baru" jika belum pernah dipakai DI APP dan belum
- * dikenal user sebelumnya (onboarding Q3, `dikenal_pada`). Dipakai matcher
- * untuk slot eksplorasi "coba yang belum pernah" — framework yang sudah
- * dikenal user langsung ke penerapan, bukan ditawarkan sebagai materi baru.
+ * dikenal user sebelumnya (ditandai dari detail framework, `dikenal_pada`).
+ * Dipakai matcher untuk slot eksplorasi "coba yang belum pernah". Framework
+ * yang sudah dikenal user langsung ke penerapan, bukan ditawarkan sebagai
+ * materi baru.
  * `== null` sengaja: baris lama (sebelum field ini ada) tidak punya nilai
  * dan harus tetap dihitung "belum dikenal".
  */

@@ -1,6 +1,6 @@
 /**
- * Flow nyatakan masalah (dokumen 04 §4.4): satu pertanyaan per satu —
- * judul → jenis masalah → tekanan waktu → sumber daya → apa yang sudah dicoba.
+ * Flow nyatakan masalah (dokumen 04 §4.4): satu pertanyaan per satu:
+ * judul, jenis masalah, tekanan waktu, sumber daya, apa yang sudah dicoba.
  * Setiap langkah (kecuali judul) bisa dilewati. Output: Masalah + kriteria
  * matching, lalu kembali ke Beranda dengan ranking untuk masalah itu.
  */
@@ -73,7 +73,7 @@ export function ProblemFlow(): React.JSX.Element {
   return (
     <div>
       <p className="indikator-langkah">
-        Langkah {langkah + 1} dari {LANGKAH.length} — {LANGKAH[langkah]}
+        Langkah {langkah + 1} dari {LANGKAH.length} · {LANGKAH[langkah]}
       </p>
 
       {langkah === 0 && (
@@ -104,6 +104,7 @@ export function ProblemFlow(): React.JSX.Element {
               <button
                 key={k}
                 type="button"
+                aria-pressed={jenis.has(k)}
                 className={`chip${jenis.has(k) ? ' terpilih' : ''}`}
                 onClick={() => toggleJenis(k)}
               >
@@ -117,20 +118,26 @@ export function ProblemFlow(): React.JSX.Element {
       {langkah === 2 && (
         <>
           <h1>Apakah masalah ini ada tenggat waktunya?</h1>
-          <button
-            type="button"
-            className={`pilihan${berwaktu === true ? ' terpilih' : ''}`}
-            onClick={() => setBerwaktu(true)}
-          >
-            Ya, ada tenggat — perlu jawaban dalam waktu dekat.
-          </button>
-          <button
-            type="button"
-            className={`pilihan${berwaktu === false ? ' terpilih' : ''}`}
-            onClick={() => setBerwaktu(false)}
-          >
-            Tidak ada tenggat khusus.
-          </button>
+          <div role="radiogroup" aria-label="Tenggat waktu">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={berwaktu === true}
+              className={`pilihan${berwaktu === true ? ' terpilih' : ''}`}
+              onClick={() => setBerwaktu(true)}
+            >
+              Ya, ada tenggat. Perlu jawaban dalam waktu dekat.
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={berwaktu === false}
+              className={`pilihan${berwaktu === false ? ' terpilih' : ''}`}
+              onClick={() => setBerwaktu(false)}
+            >
+              Tidak ada tenggat khusus.
+            </button>
+          </div>
         </>
       )}
 
@@ -138,20 +145,26 @@ export function ProblemFlow(): React.JSX.Element {
         <>
           <h1>Apakah sumber dayamu terbatas untuk masalah ini?</h1>
           <p className="muted">Waktu, uang, orang, atau ketiganya.</p>
-          <button
-            type="button"
-            className={`pilihan${sumberDayaTerbatas === true ? ' terpilih' : ''}`}
-            onClick={() => setSumberDayaTerbatas(true)}
-          >
-            Ya, terbatas — harus memilih dengan hati-hati.
-          </button>
-          <button
-            type="button"
-            className={`pilihan${sumberDayaTerbatas === false ? ' terpilih' : ''}`}
-            onClick={() => setSumberDayaTerbatas(false)}
-          >
-            Cukup — bukan kendala utama.
-          </button>
+          <div role="radiogroup" aria-label="Keterbatasan sumber daya">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={sumberDayaTerbatas === true}
+              className={`pilihan${sumberDayaTerbatas === true ? ' terpilih' : ''}`}
+              onClick={() => setSumberDayaTerbatas(true)}
+            >
+              Ya, terbatas. Harus memilih dengan hati-hati.
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={sumberDayaTerbatas === false}
+              className={`pilihan${sumberDayaTerbatas === false ? ' terpilih' : ''}`}
+              onClick={() => setSumberDayaTerbatas(false)}
+            >
+              Cukup, bukan kendala utama.
+            </button>
+          </div>
         </>
       )}
 

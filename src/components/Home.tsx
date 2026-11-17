@@ -1,5 +1,5 @@
 /**
- * Beranda — "Masalah Saya + Framework yang Cocok" (dokumen 04 §3.1).
+ * Beranda: "Masalah Saya + Framework yang Cocok" (dokumen 04 §3.1).
  * Satu-satunya tombol berisi penuh di sini adalah tombol utama ranking.
  * TIDAK ADA XP, streak, atau angka "X/22" di layar ini.
  */
@@ -9,15 +9,15 @@ import { usePadiStore } from '../store';
 import { formatTanggal, hariIni } from '../dates';
 import { reuseJatuhTempo } from '../scheduler';
 import { modelCatchUp } from '../catchup';
-import { jalurAwal } from '../onboarding';
 import { Ranking } from './Ranking';
 import { navigasi } from '../App';
+import { useJudulAnimasi } from '../gerakan';
 import type { Framework } from '../domain';
 
 export function Home(): React.JSX.Element {
   const masalahAktifId = usePadiStore((s) => s.masalahAktifId);
   const setSesiBerjalan = usePadiStore((s) => s.setSesiBerjalan);
-  const onboarding = usePadiStore((s) => s.onboarding);
+  const refJudul = useJudulAnimasi();
 
   const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
   const semuaMasalah = useLiveQuery(() => db.masalah.toArray(), []);
@@ -76,7 +76,9 @@ export function Home(): React.JSX.Element {
 
   return (
     <div>
-      <h1>Selamat belajar.</h1>
+      <h1 ref={refJudul} className="judul-animasi">
+        Selamat belajar.
+      </h1>
       <p className="muted">{formatTanggal(hariIni())}</p>
 
       {draftTerbaru && (
@@ -132,36 +134,17 @@ export function Home(): React.JSX.Element {
           <h2>Belum ada masalah aktif</h2>
           <p>
             Padi membantumu menyelesaikan masalah nyata dengan framework yang
-            tepat. Mulai dari masalahmu — atau biarkan Padi membantumu
+            tepat. Mulai dari masalahmu, atau biarkan Padi membantumu
             menemukannya.
           </p>
-          {/* Jalur awal dari onboarding (PRD M0): learner ditawari guided
-              discovery dulu (tombol utama), applier langsung problem-first. */}
-          {jalurAwal(onboarding) === 'guided-discovery' ? (
-            <>
-              <p className="muted kecil">
-                Berdasarkan jawaban onboardingmu, Padi menyarankan mulai dari
-                menemukan masalah.
-              </p>
-              <div className="baris-tombol">
-                <a className="tombol-utama" href="#/discovery">
-                  Temukan masalah
-                </a>
-                <a className="tombol-garis" href="#/masalah/baru">
-                  Nyatakan masalah baru
-                </a>
-              </div>
-            </>
-          ) : (
-            <div className="baris-tombol">
-              <a className="tombol-utama" href="#/masalah/baru">
-                Nyatakan masalah baru
-              </a>
-              <a className="tombol-garis" href="#/discovery">
-                Temukan masalah
-              </a>
-            </div>
-          )}
+          <div className="baris-tombol">
+            <a className="tombol-utama" href="#/masalah/baru">
+              Mulai dari masalahmu
+            </a>
+            <a className="tombol-garis" href="#/discovery">
+              Temukan masalah
+            </a>
+          </div>
         </div>
       )}
 

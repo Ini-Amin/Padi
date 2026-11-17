@@ -1,4 +1,4 @@
-/* Padi — gaya visual (dokumen 04 §2).
+/* Padi: gaya visual (dokumen 04 §2).
  * Flat dan tipografis: satu keluarga sans-serif sistem, tanpa webfont,
  * tanpa gradien, tanpa bayangan tebal. Hierarki dari ukuran/berat tipografi.
  * Kuning #F5D90A hanya untuk aksi utama. Hijau hanya untuk status.
@@ -6,18 +6,20 @@
  */
 
 :root {
+  color-scheme: light dark;
   --bg: #fbfbf8;
   --card: #ffffff;
   --text: #0d0d0b;
   --muted: #6b6b66;
   --border: #e0e0da;
+  --border-kuat: #8a8a8a;
   --accent: #f5d90a;
   --accent-text: #0d0d0b;
   --hijau: #2e7d32;
-  --oranye: #e65100;
-  --kuning-status: #b7950b;
+  --oranye: #bf360c;
+  --kuning-status: #7d6608;
   --abu: #8a8a8a;
-  --abu-garis: #bdbdbd;
+  --abu-garis: #8a8a8a;
   --biru: #1565c0;
   --merah: #c62828;
   --radius: 10px;
@@ -30,6 +32,7 @@
     --text: #edede8;
     --muted: #a8a8a0;
     --border: #2a2a2a;
+    --border-kuat: #6b6b66;
     --hijau: #7ed957;
     --oranye: #ffb74d;
     --kuning-status: #f5d90a;
@@ -62,6 +65,7 @@ input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
 }
 
 h1 {
@@ -91,6 +95,52 @@ p {
 
 .kecil {
   font-size: 0.85rem;
+}
+
+/* Teks yang hanya dibaca teknologi asistif (label, status non-warna). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fleksibel-1 {
+  flex: 1;
+}
+
+.tengah {
+  text-align: center;
+}
+
+.tengah-baris {
+  justify-content: center;
+}
+
+.artefak-item {
+  margin-bottom: 12px;
+}
+
+/* Skip link: tersembunyi sampai difokuskan keyboard. */
+.lewati-konten {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 10px 16px;
+  font-weight: 700;
+  border-radius: 0 0 8px 0;
+  z-index: 100;
+}
+
+.lewati-konten:focus {
+  left: 0;
 }
 
 /* --- Kerangka --- */
@@ -127,7 +177,7 @@ p {
 
 .nav a {
   text-decoration: none;
-  padding: 6px 10px;
+  padding: 11px 10px;
   border-radius: 8px;
   font-size: 0.95rem;
 }
@@ -136,6 +186,12 @@ p {
   background: var(--card);
   border: 1px solid var(--border);
   font-weight: 700;
+}
+
+.kaki {
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+  padding: 16px 0;
 }
 
 /* --- Kartu --- */
@@ -167,9 +223,17 @@ p {
   text-align: center;
 }
 
+.tombol-utama:hover {
+  filter: brightness(0.92);
+}
+
+.tombol-utama:active {
+  filter: brightness(0.85);
+}
+
 .tombol-utama:disabled {
   opacity: 0.5;
-  cursor: default;
+  cursor: not-allowed;
 }
 
 .tombol-garis {
@@ -178,9 +242,17 @@ p {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 10px 14px;
   cursor: pointer;
   text-decoration: none;
+}
+
+.tombol-garis:hover {
+  border-color: var(--text);
+}
+
+.tombol-garis:active {
+  background: var(--card);
 }
 
 .tombol-teks {
@@ -188,7 +260,7 @@ p {
   border: none;
   color: var(--muted);
   cursor: pointer;
-  padding: 4px 2px;
+  padding: 10px 4px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -213,12 +285,13 @@ label {
 }
 
 input[type="text"],
+input[type="number"],
 textarea,
 select {
   width: 100%;
   background: var(--bg);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-kuat);
   border-radius: 8px;
   padding: 10px 12px;
 }
@@ -230,13 +303,18 @@ textarea {
 
 .chip {
   display: inline-block;
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 10px 12px;
   margin: 0 6px 6px 0;
   cursor: pointer;
   background: var(--card);
   font-size: 0.9rem;
+}
+
+.chip:hover {
+  border-color: var(--text);
 }
 
 .chip.terpilih {
@@ -250,12 +328,17 @@ textarea {
   display: block;
   width: 100%;
   text-align: left;
+  color: var(--text);
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   margin: 8px 0;
   cursor: pointer;
+}
+
+.pilihan:hover {
+  border-color: var(--text);
 }
 
 .pilihan.terpilih {
@@ -272,7 +355,6 @@ textarea {
   align-items: flex-start;
   padding: 12px 0;
   border-top: 1px solid var(--border);
-  cursor: pointer;
 }
 
 .baris-ranking:first-of-type {
@@ -357,6 +439,7 @@ textarea {
 /* --- Rubrik --- */
 
 .rubrik {
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
@@ -381,6 +464,7 @@ textarea {
   gap: 10px;
   align-items: flex-start;
   padding: 8px 0;
+  min-height: 44px;
 }
 
 .cek input {
@@ -456,14 +540,25 @@ textarea {
 }
 
 .hari .kotak-hari {
+  box-sizing: border-box;
   height: 28px;
   border-radius: 6px;
+  border: 1px solid var(--border-kuat);
   background: var(--border);
   margin-bottom: 4px;
 }
 
+.hari.aktif {
+  font-weight: 700;
+  color: var(--text);
+}
+
 .hari.aktif .kotak-hari {
   background: var(--accent);
+  /* Pembeda bukan warna: border 2px gelap (teks) vs 1px abu-abu pada hari
+   * tidak aktif. Isi kuning vs abu-abu hanya 1,07:1 di mode terang, jadi
+   * border + label tebal yang membedakan, bukan isi. */
+  border: 2px solid var(--text);
 }
 
 /* --- Langkah flow --- */
@@ -491,8 +586,9 @@ pre.isi-artefak {
 
 /* --- Peta (graph SVG) --- */
 
-/* Wadah geser horizontal: SVG tetap terbaca di layar sempit tanpa
- * membuat halaman meluber. */
+/* SVG menyesuaikan lebar wadah (tanpa lebar minimum): tidak pernah ada
+ * scrollbar horizontal. Di bawah 720px graph disembunyikan dan daftar
+ * bertema menjadi tampilan utama (dokumen 04 §3.3). */
 .peta-gulir {
   overflow-x: auto;
   background: var(--card);
@@ -505,18 +601,17 @@ pre.isi-artefak {
 .peta-svg {
   display: block;
   width: 100%;
-  min-width: 700px;
   height: auto;
 }
 
 .peta-kepala-tema {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   fill: var(--text);
 }
 
 .peta-subtema {
-  font-size: 10px;
+  font-size: 11px;
   fill: var(--muted);
 }
 
@@ -533,7 +628,7 @@ pre.isi-artefak {
 }
 
 .peta-label {
-  font-size: 12px;
+  font-size: 13px;
   fill: var(--text);
   pointer-events: none;
 }
@@ -547,4 +642,106 @@ pre.isi-artefak {
   gap: 8px;
   align-items: center;
   padding: 3px 0;
+}
+
+.catatan-peta-kecil {
+  display: none;
+}
+
+/* --- Judul beranimasi (Paket 3: split-type, huruf muncul berurutan) --- */
+
+.judul-animasi .huruf {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.25em);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.judul-animasi.jalan .huruf {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Responsif --- */
+
+/* Layar lebar: Peta memakai wadah lebih lebar agar node terbaca
+ * (node 64px pada skala tampil penuh, label 13px; target sentuh
+ * mencapai 44px mulai lebar viewport sekitar 900px). */
+@media (min-width: 760px) {
+  .pembungkus.lebar {
+    max-width: 1080px;
+  }
+}
+
+/* Di bawah 720px graph tidak lagi terbaca: sembunyikan SVG + legenda
+ * garisnya, tampilkan catatan bahwa daftar di bawah adalah tampilan utama. */
+@media (max-width: 720px) {
+  .peta-gulir,
+  .legenda-baris {
+    display: none;
+  }
+
+  .catatan-peta-kecil {
+    display: block;
+  }
+}
+
+/* Mobile: navigasi bawah (dokumen 04 §2), skala tipografi lebih kecil. */
+@media (max-width: 560px) {
+  .pembungkus {
+    padding-bottom: 110px;
+  }
+
+  .kepala {
+    padding: 16px 0 10px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+  }
+
+  .timer {
+    font-size: 2.4rem;
+  }
+
+  .kartu {
+    padding: 14px;
+  }
+
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    justify-content: space-around;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Metrik 2 kolom menjadi 1 kolom di layar sangat sempit. */
+@media (max-width: 480px) {
+  .metrik {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Hormati permintaan tanpa gerakan: semua transisi/animasi dimatikan. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .judul-animasi .huruf {
+    opacity: 1;
+    transform: none;
+  }
 }

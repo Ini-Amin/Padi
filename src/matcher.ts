@@ -1,8 +1,8 @@
 /**
- * Matching engine — modul murni, tanpa AI (PRD M4, dokumen 05 §1).
+ * Matching engine: modul murni, tanpa AI (PRD M4, dokumen 05 §1).
  * Masalah user (kriteria dari flow pertanyaan terbimbing) dicocokkan dengan
  * signature masalah tiap framework. Output: ranking 3 teratas + 1 slot
- * "coba yang belum pernah" — TIDAK PERNAH satu jawaban pasti.
+ * "coba yang belum pernah". TIDAK PERNAH satu jawaban pasti.
  */
 import type { Framework, KriteriaMasalah, Masalah } from './domain';
 import { LABEL_KRITERIA as LABEL } from './domain';
@@ -29,79 +29,79 @@ export const POLA_KE_KRITERIA: Record<string, KriteriaMasalah[]> = {
     'produk_baru',
     'sumber_daya_terbatas',
   ],
-  // Fase 0 — Value Chain (B)
+  // Fase 0: Value Chain (B)
   memetakan_aktivitas_internal: ['persaingan', 'sumber_daya_terbatas'],
   mencari_sumber_biaya_tinggi: ['sumber_daya_terbatas'],
   memahami_dari_mana_nilai_datang: ['persaingan', 'jangka_panjang'],
-  // Fase 0 — VRIO (B)
+  // Fase 0: VRIO (B)
   menguji_keunggulan_bersaing: ['persaingan', 'jangka_panjang'],
   menilai_aset_dan_kemampuan: ['persaingan', 'sumber_daya_terbatas'],
   menentukan_apa_yang_dilindungi: ['persaingan', 'jangka_panjang'],
-  // Fase 0 — Core Competencies (B)
+  // Fase 0: Core Competencies (B)
   menentukan_kemampuan_inti: ['persaingan', 'jangka_panjang'],
   memutuskan_bangun_atau_beli: ['sumber_daya_terbatas', 'produk_baru'],
   memfokuskan_keahlian_pembeda: ['persaingan', 'jangka_panjang'],
-  // Fase 0 — BCG Matrix (C)
+  // Fase 0: BCG Matrix (C)
   memetakan_portofolio_produk: ['pertumbuhan', 'sumber_daya_terbatas'],
   mengalokasikan_dana_antar_unit: ['sumber_daya_terbatas', 'pertumbuhan'],
   menilai_produk_bertumbuh_vs_mapan: ['pertumbuhan', 'jangka_panjang'],
-  // Fase 0 — Blue Ocean Strategy (C)
+  // Fase 0: Blue Ocean Strategy (C)
   mencari_ruang_pasar_baru: ['pasar_baru', 'pertumbuhan'],
   persaingan_harga_makin_ketat: ['persaingan', 'pasar_baru'],
   menciptakan_permintaan_baru: ['pasar_baru', 'produk_baru'],
-  // Fase 0 — McKinsey Three Horizons (D)
+  // Fase 0: McKinsey Three Horizons (D)
   menyeimbangkan_kini_dan_masa_depan: ['jangka_panjang', 'pertumbuhan'],
   inovasi_tergerus_urusan_harian: ['jangka_panjang', 'sumber_daya_terbatas'],
   memetakan_jadwal_pertumbuhan: ['pertumbuhan', 'jangka_panjang'],
-  // Fase 0 — McKinsey 7S (D)
+  // Fase 0: McKinsey 7S (D)
   mendiagnosis_organisasi_tidak_selaras: ['jangka_panjang'],
   perubahan_mentok_karena_budaya: ['jangka_panjang'],
   menyelaraskan_struktur_dan_sdm: ['sumber_daya_terbatas', 'jangka_panjang'],
-  // Fase 0 — Business Model Canvas (E)
+  // Fase 0: Business Model Canvas (E)
   merancang_model_bisnis: ['produk_baru', 'pasar_baru'],
   tidak_jelas_dari_mana_untung: ['produk_baru', 'sumber_daya_terbatas'],
   memetakan_cara_perusahaan_bekerja: ['pertumbuhan', 'produk_baru'],
-  // Fase 0 — Lean Startup (E)
+  // Fase 0: Lean Startup (E)
   menguji_asumsi_paling_berisiko: ['produk_baru', 'sumber_daya_terbatas'],
   memutuskan_pivot_atau_lanjut: ['produk_baru', 'pertumbuhan'],
   membangun_tanpa_validasi: ['produk_baru', 'sumber_daya_terbatas'],
-  // Fase 0 — Design Thinking (E)
+  // Fase 0: Design Thinking (E)
   memahami_masalah_pengguna: ['produk_baru', 'pasar_baru'],
   solusi_tidak_dipakai_pengguna: ['produk_baru'],
   mencari_ide_dari_empati: ['produk_baru', 'pertumbuhan'],
-  // Fase 0 — Agile Scrum (E)
+  // Fase 0: Agile Scrum (E)
   mengirim_produk_secara_iteratif: ['berwaktu', 'produk_baru'],
   proyek_molol_tanpa_hasil_terlihat: ['berwaktu', 'sumber_daya_terbatas'],
   tim_butuh_ritme_kerja: ['berwaktu'],
-  // Fase 0 — Kanban (E)
+  // Fase 0: Kanban (E)
   pekerjaan_menumpuk_tidak_selesai: ['berwaktu', 'sumber_daya_terbatas'],
   memvisualkan_alur_kerja: ['berwaktu'],
   membatasi_pekerjaan_berjalan: ['sumber_daya_terbatas', 'berwaktu'],
-  // Fase 0 — Six Sigma DMAIC (F)
+  // Fase 0: Six Sigma DMAIC (F)
   mengurangi_cacat_proses: ['sumber_daya_terbatas', 'jangka_panjang'],
   memperbaiki_proses_yang_boros: ['sumber_daya_terbatas'],
   kualitas_tidak_konsisten: ['jangka_panjang', 'sumber_daya_terbatas'],
-  // Fase 0 — Lewin Change Model (F)
+  // Fase 0: Lewin Change Model (F)
   memulai_perubahan_dari_status_quo: ['jangka_panjang'],
   perubahan_kembali_ke_kebiasaan_lama: ['jangka_panjang'],
   memahami_tahapan_perubahan: ['jangka_panjang', 'tidak_tahu_fokus'],
-  // Fase 0 — Kotter 8-Step (F)
+  // Fase 0: Kotter 8-Step (F)
   memimpin_perubahan_organisasi: ['jangka_panjang'],
   perubahan_ditolak_karyawan: ['jangka_panjang', 'tidak_tahu_fokus'],
   inisiatif_perubahan_mati_di_tengah: ['jangka_panjang', 'berwaktu'],
-  // Fase 0 — ADKAR (F)
+  // Fase 0: ADKAR (F)
   individu_belum_siap_berubah: ['jangka_panjang'],
   perubahan_gagal_di_level_orang: ['jangka_panjang'],
   mengelola_transisi_individu: ['jangka_panjang', 'berwaktu'],
-  // Fase 0 — Balanced Scorecard (G)
+  // Fase 0: Balanced Scorecard (G)
   mengukur_kinerja_menyeluruh: ['jangka_panjang', 'berwaktu'],
   menyelaraskan_target_antar_bagian: ['jangka_panjang'],
   strategi_tidak_turun_ke_aksi: ['jangka_panjang', 'berwaktu'],
-  // Fase 0 — OKRs (G)
+  // Fase 0: OKRs (G)
   menetapkan_target_terukur: ['berwaktu', 'jangka_panjang'],
   menyelaraskan_tim_pada_tujuan: ['tidak_tahu_fokus', 'berwaktu'],
   fokus_terpecah_terlalu_banyak_target: ['tidak_tahu_fokus', 'sumber_daya_terbatas'],
-  // Fase 0 — AIDA (G)
+  // Fase 0: AIDA (G)
   mengubah_perhatian_jadi_pembelian: ['pasar_baru', 'produk_baru'],
   pelanggan_tidak_sampai_ke_keputusan: ['pasar_baru'],
   merancang_alur_pemasaran: ['pasar_baru', 'pertumbuhan'],

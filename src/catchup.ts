@@ -1,5 +1,5 @@
 /**
- * Model layar catch-up — modul murni (dokumen 07 §3.1).
+ * Model layar catch-up: modul murni (dokumen 07 §3.1).
  * Re-use yang terlewat >3 hari dikelompokkan jadi sesi catch-up
  * (maks 3 framework per sesi, 1 sesi per hari) oleh `kelompokCatchUp()`
  * di scheduler.ts; modul ini hanya menambah nama framework + jumlah hari
@@ -14,7 +14,7 @@ import type { Framework, ISODate, JadwalReuse, JenisSesi } from './domain';
 import { selisihHari } from './dates';
 import { kelompokCatchUp } from './scheduler';
 
-/** Durasi target sesi catch-up — sama dengan re-use (12 menit). */
+/** Durasi target sesi catch-up: sama dengan re-use (12 menit). */
 export const DURASI_CATCH_UP_MENIT = 12;
 
 export interface ItemCatchUp {

@@ -1,5 +1,5 @@
 /**
- * Uji status framework — definisi "dikuasai" 3 syarat (dokumen 07 §3.1).
+ * Uji status framework: definisi "dikuasai" 3 syarat (dokumen 07 §3.1).
  * Semua 8 kombinasi syarat diuji eksplisit, ditambah property test.
  */
 import { describe, expect, it } from 'vitest';
@@ -69,7 +69,7 @@ function konteks(
   return { framework, pemakaian, artefak, jadwalReuse: jadwal, masalahById, hariIni: HARI_INI };
 }
 
-describe('hitungStatus — 8 kombinasi syarat "dikuasai"', () => {
+describe('hitungStatus: 8 kombinasi syarat "dikuasai"', () => {
   const kasus: Array<{
     nama: string;
     opts: Parameters<typeof konteks>[0];
@@ -108,7 +108,7 @@ describe('hitungStatus — 8 kombinasi syarat "dikuasai"', () => {
   }
 });
 
-describe('hitungStatus — urutan prioritas', () => {
+describe('hitungStatus: urutan prioritas', () => {
   it('tanpa pemakaian → belum_dipakai', () => {
     expect(hitungStatus(konteks({ adaPemakaian: false }))).toBe('belum_dipakai');
   });
@@ -164,7 +164,7 @@ describe('hitungStatus — urutan prioritas', () => {
   });
 });
 
-describe('cekSyaratDikuasai — H+30 BUKAN syarat (v0.5, US-2.5)', () => {
+describe('cekSyaratDikuasai: H+30 BUKAN syarat (v0.5, US-2.5)', () => {
   it('ketiga syarat terpenuhi tanpa re-use H+30 apa pun → semua: true', () => {
     const ctx = konteks({
       transfer: true,
@@ -176,7 +176,7 @@ describe('cekSyaratDikuasai — H+30 BUKAN syarat (v0.5, US-2.5)', () => {
   });
 });
 
-describe('masalahBerbeda — definisi transfer (dokumen 03 §7)', () => {
+describe('masalahBerbeda: definisi transfer (dokumen 03 §7)', () => {
   it('judul + kriteria identik → TIDAK berbeda (transfer palsu dicegah)', () => {
     const a = buatMasalah({ judul: 'Fokus segmen?', kriteria: ['tidak_tahu_fokus'] });
     const b = buatMasalah({ judul: '  fokus SEGMEN? ', kriteria: ['tidak_tahu_fokus'] });
@@ -243,7 +243,7 @@ describe('cekTransfer', () => {
 });
 
 describe('cekArtefakBerkualitas', () => {
-  it('ketiga checklist wajib — 2 dari 3 tidak cukup', () => {
+  it('ketiga checklist wajib: 2 dari 3 tidak cukup', () => {
     expect(
       cekArtefakBerkualitas(
         buatArtefak({ kualitas_lengkap: true, kualitas_prioritasi: true, kualitas_rekomendasi: false }),

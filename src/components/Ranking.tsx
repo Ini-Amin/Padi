@@ -4,7 +4,9 @@
  * Tombol "Ganti" menampilkan alternatif peringkat 4–6; "Tidak cocok"
  * mencatat umpan balik sebagai telemetri (tanpa penalti).
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import gsap from 'gsap';
 import type { Framework, Masalah } from '../domain';
 import {
   alternatifBerikutnya,
@@ -15,24 +17,56 @@ import { db, mulaiSesi } from '../db';
 import { navigasi } from '../App';
 import { usePadiStore } from '../store';
 import { hariIni } from '../dates';
+import { useGerakanAktif } from '../gerakan';
 
 interface Props {
   masalah: Masalah;
   frameworks: Framework[];
   dipakaiIds: ReadonlySet<string>;
   /**
-   * Dipanggil saat user memulai sesi dari ranking ini. Dipakai layar penutup
-   * onboarding untuk membalik flag `selesai` sebelum bernavigasi ke sesi —
-   * tanpa ini, gate first-run di App.tsx akan menampilkan onboarding lagi.
+   * Reveal terorkestrasi (GSAP): 3 baris hasil matching muncul berurutan
+   * saat pertama tampil. Hanya dipakai langkah 2 onboarding, momen
+   * penemuan hasil matching; di Beranda/Detail ranking tampil langsung.
    */
-  onMulaiSesi?: () => void;
+  animasiMasuk?: boolean;
 }
 
-export function Ranking({ masalah, frameworks, dipakaiIds, onMulaiSesi }: Props): React.JSX.Element {
+export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false }: Props): React.JSX.Element {
   const [menampilkanAlternatif, setMenampilkanAlternatif] = useState(false);
   const [umpanBalik, setUmpanBalik] = useState(false);
   const [memulai, setMemulai] = useState<string | null>(null);
   const setSesiBerjalan = usePadiStore((s) => s.setSesiBerjalan);
+  const gerakanAktif = useGerakanAktif();
+  // AutoAnimate: "Ganti" menukar isi daftar (peringkat ke alternatif).
+  const [refDaftar] = useAutoAnimate({
+    duration: gerakanAktif ? 250 : 0,
+  });
+  const refKartu = useRef<HTMLDivElement | null>(null);
+
+  // Reveal hasil matching: baris muncul satu per satu (GSAP, sekali saja
+  // saat mount). Tidak berjalan bila gerakan tidak aktif atau tidak ada baris.
+  useEffect(() => {
+    const kartu = refKartu.current;
+    if (!animasiMasuk || !gerakanAktif) return;
+    if (kartu === null || kartu.querySelector('.baris-ranking') === null) {
+      return;
+    }
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.baris-ranking',
+        { opacity: 0, y: 10 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.35,
+          stagger: 0.08,
+          ease: 'power1.out',
+          clearProps: 'all',
+        },
+      );
+    }, kartu);
+    return () => ctx.revert();
+  }, [animasiMasuk, gerakanAktif]);
 
   const hasil = useMemo(
     () => rankingUntukMasalah(masalah, frameworks, dipakaiIds),
@@ -59,7 +93,6 @@ export function Ranking({ masalah, frameworks, dipakaiIds, onMulaiSesi }: Props)
         durasi_target_menit: 45,
       });
       setSesiBerjalan(sesi.id);
-      onMulaiSesi?.();
       navigasi(`#/sesi/${sesi.id}`);
     } finally {
       setMemulai(null);
@@ -99,30 +132,32 @@ export function Ranking({ masalah, frameworks, dipakaiIds, onMulaiSesi }: Props)
   const daftar = menampilkanAlternatif ? alternatif : hasil.peringkat;
 
   return (
-    <div className="kartu">
+    <div className="kartu" ref={refKartu}>
       <h2>Framework yang cocok</h2>
-      {daftar.map((h, i) => (
-        <BarisRanking
-          key={h.framework.id}
-          hasil={h}
-          peringkat={i + 1}
-          utama={!menampilkanAlternatif && i === 0}
-          memulai={memulai === h.framework.id}
-          onPakai={() => void pakai(h.framework.id)}
-        />
-      ))}
+      <div ref={refDaftar}>
+        {daftar.map((h, i) => (
+          <BarisRanking
+            key={h.framework.id}
+            hasil={h}
+            peringkat={i + 1}
+            utama={!menampilkanAlternatif && i === 0}
+            memulai={memulai === h.framework.id}
+            onPakai={() => void pakai(h.framework.id)}
+          />
+        ))}
+        {!menampilkanAlternatif && hasil.eksplorasi && (
+          <BarisRanking
+            hasil={hasil.eksplorasi}
+            peringkat={null}
+            utama={false}
+            eksplorasi
+            memulai={memulai === hasil.eksplorasi.framework.id}
+            onPakai={() => void pakai(hasil.eksplorasi!.framework.id)}
+          />
+        )}
+      </div>
       {menampilkanAlternatif && alternatif.length === 0 && (
         <p className="muted">Tidak ada alternatif lain untuk masalah ini.</p>
-      )}
-      {!menampilkanAlternatif && hasil.eksplorasi && (
-        <BarisRanking
-          hasil={hasil.eksplorasi}
-          peringkat={null}
-          utama={false}
-          eksplorasi
-          memulai={memulai === hasil.eksplorasi.framework.id}
-          onPakai={() => void pakai(hasil.eksplorasi!.framework.id)}
-        />
       )}
       <div className="baris-tombol">
         {!menampilkanAlternatif && (
@@ -149,7 +184,7 @@ export function Ranking({ masalah, frameworks, dipakaiIds, onMulaiSesi }: Props)
       </div>
       {umpanBalik && (
         <p className="muted kecil">
-          Terima kasih — umpan balikmu dicatat. Ranking berikutnya ditampilkan
+          Terima kasih, umpan balikmu dicatat. Ranking berikutnya ditampilkan
           di atas.
         </p>
       )}
@@ -172,14 +207,13 @@ function BarisRanking({
   memulai: boolean;
   onPakai: () => void;
 }): React.JSX.Element {
+  // Barisnya sendiri bukan kontrol: satu-satunya aksi adalah tombol "Pakai"
+  // (native button, bisa Enter dan Space). Klik-baris sengaja tidak ada:
+  // memulai sesi 45 menit tidak boleh terjadi karena klik yang tidak sengaja.
   return (
-    <div className="baris-ranking" onClick={onPakai} role="button" tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') onPakai();
-      }}
-    >
+    <div className="baris-ranking">
       <span className="peringkat">{peringkat ?? ''}</span>
-      <div style={{ flex: 1 }}>
+      <div className="fleksibel-1">
         <span className="nama-framework">{hasil.framework.nama}</span>
         {eksplorasi && <span className="label-eksplorasi">eksplorasi</span>}
         <p className="alasan">{hasil.alasan}</p>
@@ -189,10 +223,7 @@ function BarisRanking({
           className="tombol-utama"
           type="button"
           disabled={memulai}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPakai();
-          }}
+          onClick={onPakai}
         >
           {memulai ? 'Memulai…' : `Pakai ${hasil.framework.nama} (45')`}
         </button>
@@ -201,10 +232,7 @@ function BarisRanking({
           className="tombol-garis"
           type="button"
           disabled={memulai}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPakai();
-          }}
+          onClick={onPakai}
         >
           Pakai
         </button>

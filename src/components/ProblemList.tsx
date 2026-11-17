@@ -1,18 +1,26 @@
 /**
  * Daftar masalah (dokumen 04 §3.7): aktif di atas, selesai/diarsipkan di bawah.
- * Masalah tidak pernah dihapus — hanya diarsipkan.
+ * Masalah tidak pernah dihapus, hanya diarsipkan.
  */
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { db } from '../db';
 import { usePadiStore } from '../store';
 import { formatTanggal } from '../dates';
 import { navigasi } from '../App';
+import { useGerakanAktif } from '../gerakan';
 
 export function ProblemList(): React.JSX.Element {
   const semuaMasalah = useLiveQuery(() => db.masalah.toArray(), []);
   const pemakaian = useLiveQuery(() => db.pemakaian.toArray(), []);
   const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
   const setMasalahAktif = usePadiStore((s) => s.setMasalahAktif);
+  const gerakanAktif = useGerakanAktif();
+  // AutoAnimate: kartu berpindah saat status masalah berubah (aktif ke
+  // selesai/diarsipkan mengurutkan ulang daftar).
+  const [refDaftar] = useAutoAnimate({
+    duration: gerakanAktif ? 250 : 0,
+  });
 
   if (
     semuaMasalah === undefined ||
@@ -41,7 +49,8 @@ export function ProblemList(): React.JSX.Element {
           Belum ada masalah. Nyatakan satu masalah nyata untuk memulai.
         </p>
       )}
-      {terurut.map((m) => {
+      <div ref={refDaftar}>
+        {terurut.map((m) => {
         const fw = [...new Set(
           pemakaian.filter((p) => p.masalah_id === m.id).map((p) => p.framework_id),
         )]
@@ -76,7 +85,8 @@ export function ProblemList(): React.JSX.Element {
             </div>
           </div>
         );
-      })}
+        })}
+      </div>
     </div>
   );
 }

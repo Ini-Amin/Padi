@@ -1,5 +1,5 @@
 /**
- * Peta — graph SVG statis (M3) + tampilan daftar bertema sebagai fallback
+ * Peta: graph SVG statis (M3) + tampilan daftar bertema sebagai fallback
  * aksesibilitas (dokumen 04 §3.3). Daftar menjawab "framework mana yang
  * berhubungan dengan masalah saya?" lewat status; graph menunjukkan relasinya.
  */
@@ -20,8 +20,11 @@ export function MapList(): React.JSX.Element {
     <div>
       <h1>Peta framework</h1>
       <p className="muted">
-        Pustaka framework — bukan urutan belajar. Klik node di peta untuk
+        Pustaka framework, bukan urutan belajar. Klik node di peta untuk
         melihat detail, 3 lapis konten, dan statusnya.
+      </p>
+      <p className="muted kecil catatan-peta-kecil">
+        Peta grafik hanya tampil di layar lebar. Daftar di bawah ini lengkap.
       </p>
       <GraphSvg />
       <h2>Daftar per tema</h2>
@@ -33,7 +36,7 @@ export function MapList(): React.JSX.Element {
         return (
           <div key={tema}>
             <h2>
-              Tema {tema} — {NAMA_TEMA[tema]}
+              Tema {tema}: {NAMA_TEMA[tema]}
             </h2>
             {daftar.map((f) => (
               <div className="baris-daftar" key={f.id}>

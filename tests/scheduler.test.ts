@@ -1,5 +1,5 @@
 /**
- * Uji scheduler — aritmetika tanggal re-use (dokumen 07 §3.1).
+ * Uji scheduler: aritmetika tanggal re-use (dokumen 07 §3.1).
  * Contoh-contoh dari PRD M2 dan dokumen 07, ditambah property test fast-check.
  */
 import { describe, expect, it } from 'vitest';
@@ -45,7 +45,7 @@ describe('jadwalDariPemakaian (contoh PRD M2)', () => {
   });
 });
 
-describe('jadwalBerikutnya — dari tanggal DISELESAIKAN', () => {
+describe('jadwalBerikutnya: dari tanggal DISELESAIKAN', () => {
   it('H+3 jatuh tempo 19 Nov, dikerjakan 23 Nov → H+7 berikutnya 30 Nov', () => {
     expect(jadwalBerikutnya('H+3', T('2026-11-23'))).toEqual({
       jenis_reuse: 'H+7',

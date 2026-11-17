@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, aktifkanKembali, mulaiSesi, simpanKapanTidakPakai, tandaiTidakRelevan } from '../db';
+import { db, aktifkanKembali, mulaiSesi, simpanKapanTidakPakai, tandaiDikenal, tandaiTidakRelevan } from '../db';
 import { usePadiStore } from '../store';
 import { NAMA_TEMA } from '../domain';
 import { formatTanggal } from '../dates';
@@ -51,7 +51,16 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
   ) {
     return <p className="muted">Memuat…</p>;
   }
-  if (!framework) return <p>Framework tidak ditemukan.</p>;
+  if (!framework) {
+    return (
+      <div>
+        <p>Framework tidak ditemukan.</p>
+        <a className="tombol-garis" href="#/">
+          Kembali ke Beranda
+        </a>
+      </div>
+    );
+  }
 
   const masalahById = new Map(semuaMasalah.map((m) => [m.id, m]));
   const frameworkById = new Map(semuaFramework.map((f) => [f.id, f]));
@@ -75,7 +84,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
   return (
     <div>
       <p className="muted">
-        Tema {framework.tema} — {NAMA_TEMA[framework.tema]} · Katalog #{framework.urutan_katalog}
+        Tema {framework.tema}: {NAMA_TEMA[framework.tema]} · Katalog #{framework.urutan_katalog}
       </p>
       <h1>{framework.nama}</h1>
       <p>
@@ -86,6 +95,21 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
           ` · pertama dipakai ${formatTanggal(framework.dipakai_pertama_pada)}`}
         {framework.dikuasai_pada && ` · dikuasai ${formatTanggal(framework.dikuasai_pada)}`}
       </p>
+      {framework.dikenal_pada === null ? (
+        <p>
+          <button
+            className="tombol-teks"
+            type="button"
+            onClick={() => void tandaiDikenal(id)}
+          >
+            Saya sudah tahu framework ini
+          </button>
+        </p>
+      ) : (
+        <p className="muted kecil">
+          Sudah kamu kenal sejak {formatTanggal(framework.dikenal_pada)}.
+        </p>
+      )}
 
       <p>{framework.ringkasan}</p>
       <h2>Ide kunci</h2>
@@ -100,31 +124,31 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       <p className="muted kecil">Sumber: {framework.sumber}</p>
 
       <div className="kartu">
-        <h2>Pemetaan masalah — kapan dipakai</h2>
+        <h2>Pemetaan masalah: kapan dipakai</h2>
         <p>{framework.lapis_a_pemetaan}</p>
       </div>
       <div className="kartu">
-        <h2>Prosedur — cara memakai</h2>
+        <h2>Prosedur: cara memakai</h2>
         <p>{framework.lapis_b_prosedur}</p>
       </div>
       <div className="kartu">
-        <h2>Kesalahan umum — kapan salah alat</h2>
+        <h2>Kesalahan umum: kapan salah alat</h2>
         <p>{framework.lapis_c_kesalahan}</p>
       </div>
 
       <div className="kartu">
         <h2>Syarat "dikuasai"</h2>
         <p className={syarat.transfer ? 'teks-hijau' : ''}>
-          {syarat.transfer ? 'Terpenuhi' : 'Belum'} — Transfer: dipakai untuk{' '}
+          {syarat.transfer ? 'Terpenuhi' : 'Belum'}. Transfer: dipakai untuk{' '}
           {jumlahMasalah} dari 2 masalah berbeda (skor ≥2).
         </p>
         <p className={syarat.artefakBerkualitas ? 'teks-hijau' : ''}>
-          {syarat.artefakBerkualitas ? 'Terpenuhi' : 'Belum'} — Artefak
+          {syarat.artefakBerkualitas ? 'Terpenuhi' : 'Belum'}. Artefak
           berkualitas: minimal 1 artefak yang lengkap + ada prioritasi + ada
           rekomendasi.
         </p>
         <p className={syarat.kemandirian ? 'teks-hijau' : ''}>
-          {syarat.kemandirian ? 'Terpenuhi' : 'Belum'} — Kemandirian: menulis
+          {syarat.kemandirian ? 'Terpenuhi' : 'Belum'}. Kemandirian: menulis
           kapan framework ini salah alat.
         </p>
       </div>
@@ -132,14 +156,18 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       <div className="kartu">
         <h2>Kapan framework ini salah alat?</h2>
         <p className="muted kecil">
-          Tulis 1–2 kalimat. Ini salah satu syarat "dikuasai" — dan bukti kamu
+          Tulis 1–2 kalimat. Ini salah satu syarat "dikuasai", dan bukti kamu
           memahami batas framework ini. Contoh pemandu dari kesalahan umum di
           atas.
         </p>
+        <label className="sr-only" htmlFor="kapan-tidak-pakai">
+          Kapan framework ini salah alat?
+        </label>
         <textarea
+          id="kapan-tidak-pakai"
           value={teksKapan ?? framework.kapan_tidak_pakai ?? ''}
           onChange={(e) => setTeksKapan(e.target.value)}
-          placeholder="Misal: PESTEL salah alat saat masalahnya internal — kekuatan tim atau proses, bukan faktor luar."
+          placeholder="Misal: PESTEL salah alat saat masalahnya internal: kekuatan tim atau proses, bukan faktor luar."
         />
         <div className="baris-tombol">
           <button
@@ -172,7 +200,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
         <div className="kartu">
           <h2>Artefak</h2>
           {artefak.map((a) => (
-            <div key={a.id} style={{ marginBottom: 12 }}>
+            <div key={a.id} className="artefak-item">
               <p>
                 <strong>{a.judul}</strong>{' '}
                 {a.kualitas_terpenuhi && (
@@ -207,7 +235,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
               <p key={e.id}>
                 <a href={`#/framework/${lainId}`}>{lain?.nama ?? lainId}</a>{' '}
                 <span className="lencana">{e.tipe.replaceAll('_', ' ')}</span>
-                {e.alasan && <span className="muted"> — {e.alasan}</span>}
+                {e.alasan && <span className="muted">: {e.alasan}</span>}
               </p>
             );
           })}
@@ -244,7 +272,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
           </button>
         ) : !konfirmasi ? (
           <button className="tombol-teks" type="button" onClick={() => setKonfirmasi(true)}>
-            Tandai Tidak Relevan
+            Tandai tidak relevan
           </button>
         ) : (
           <span>

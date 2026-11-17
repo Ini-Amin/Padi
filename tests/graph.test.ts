@@ -17,7 +17,7 @@ const graph = JSON.parse(
 
 const TEMA_VALID = new Set(['A', 'B', 'C', 'D', 'E', 'F', 'G']);
 
-describe('graph.json — node seed', () => {
+describe('graph.json: node seed', () => {
   it('memiliki 22 framework lengkap (Fase 0, dokumen 03 §5)', () => {
     expect(graph.nodes.map((n) => n.id).sort()).toEqual([
       'adkar',
@@ -101,7 +101,7 @@ describe('graph.json — node seed', () => {
   });
 });
 
-describe('graph.json — edge', () => {
+describe('graph.json: edge', () => {
   it('memiliki 35 edge (15 satu_tema + 20 lintas-tema terkurasi, dokumen 03 §5)', () => {
     expect(graph.edges).toHaveLength(35);
     const hitung = (tipe: string) =>

@@ -1,5 +1,5 @@
 /**
- * Uji PWA — pwa.ts + manifest + service worker.
+ * Uji PWA: pwa.ts + manifest + service worker.
  * Registrasi dijaga agar tidak pernah merusak lingkungan tanpa service
  * worker (test Node di sini); manifest dan sw.js diperiksa sebagai file.
  */

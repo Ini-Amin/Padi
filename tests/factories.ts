@@ -1,4 +1,4 @@
-/** Factory entitas untuk pengujian. Bukan file test — tidak dieksekusi vitest. */
+/** Factory entitas untuk pengujian. Bukan file test. Tidak dieksekusi vitest. */
 import type {
   Artefak,
   Framework,

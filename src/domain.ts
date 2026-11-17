@@ -1,14 +1,14 @@
 /**
- * Tipe domain Padi — satu-satunya definisi entitas (dokumen 03 v0.3).
+ * Tipe domain Padi: satu-satunya definisi entitas (dokumen 03 v0.3).
  *
  * Aturan yang ditegakkan tipe di sini:
  * - Tanggal adalah `ISODate` (string bermerek `YYYY-MM-DD`). Aritmetika tanggal
- *   hanya lewat `dates.ts` — tidak ada string tanggal bebas yang bisa salah tulis.
+ *   hanya lewat `dates.ts`, tidak ada string tanggal bebas yang bisa salah tulis.
  * - `Skor` hanya 0–3 (union literal, bukan number bebas).
  * - `ide_kunci` tepat 3 (tuple), sesuai dokumen 03.
  * - `status` framework TIDAK PERNAH diisi manual: satu-satunya penulis adalah
  *   `refreshFrameworkStatus()` di db.ts, yang memanggil `hitungStatus()` murni
- *   di status.ts. Status "dikuasai" tidak bisa ditulis langsung — ia hasil
+ *   di status.ts. Status "dikuasai" tidak bisa ditulis langsung. Ia hasil
  *   hitung dari tiga syarat (transfer + artefak berkualitas + kemandirian).
  * - `kualitas_terpenuhi` dan `total_xp` adalah nilai turunan, dihitung dari
  *   field sumbernya, bukan diisi sebagai input.
@@ -41,7 +41,7 @@ export type TipeEdge = 'prasyarat' | 'kontras' | 'dipakai_bersama' | 'satu_tema'
 
 export type JenisArtefak = 'teks' | 'diagram' | 'memo' | 'analisis_perusahaan';
 
-/** Kriteria masalah — kosakata matching (dokumen 03 §2.1, PRD M4). */
+/** Kriteria masalah: kosakata matching (dokumen 03 §2.1, PRD M4). */
 export type KriteriaMasalah =
   | 'eksternal'
   | 'persaingan'
@@ -91,7 +91,7 @@ export interface Framework {
   lapis_a_pemetaan: string;
   /** Lapis (b): langkah memakai framework ini. */
   lapis_b_prosedur: string;
-  /** Lapis (c): kesalahan umum — kapan framework ini salah alat. */
+  /** Lapis (c): kesalahan umum, kapan framework ini salah alat. */
   lapis_c_kesalahan: string;
   sumber: string;
   diedit_user: boolean;
@@ -106,7 +106,7 @@ export interface Framework {
    * Tanggal user menyatakan sudah mengenal framework ini (onboarding Q3).
    * Framework yang dikenal BUKAN materi baru: tidak muncul di slot eksplorasi
    * matching (status.ts `materiBaru`) dan langsung ke penerapan, bukan ke
-   * "materi baru". Ini BUKAN status — status tetap dihitung dari pemakaian
+   * "materi baru". Ini BUKAN status. Status tetap dihitung dari pemakaian
    * (hitungStatus). Null = belum pernah dinyatakan dikenal.
    */
   dikenal_pada: ISODate | null;
@@ -197,7 +197,7 @@ export interface JadwalReuse {
   catch_up_group_id: string | null;
 }
 
-/** Satu baris progres. `total_xp` TIDAK disimpan — dihitung dari xp_ledger. */
+/** Satu baris progres. `total_xp` TIDAK disimpan, dihitung dari xp_ledger. */
 export interface Progres {
   id: string;
   streak_hari: number;

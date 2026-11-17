@@ -1,5 +1,5 @@
 /**
- * Scheduler re-use — modul murni (dokumen 03 §2.7, PRD M2).
+ * Scheduler re-use: modul murni (dokumen 03 §2.7, PRD M2).
  * Review adalah RE-USE dari event pemakaian, bukan re-read:
  * setiap pemakaian (skor ≥1) menjadwalkan H+1, H+3, H+7, H+30.
  * Re-use berikutnya dihitung dari tanggal re-use DISELESAIKAN,

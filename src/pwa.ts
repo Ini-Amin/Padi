@@ -1,5 +1,5 @@
 /**
- * Registrasi service worker (PWA) — dijaga agar tidak pernah merusak
+ * Registrasi service worker (PWA). Dijaga agar tidak pernah merusak
  * lingkungan tanpa service worker (test Node, browser lama, dev server).
  *
  * Hanya didaftarkan di build produksi: di dev server, service worker akan

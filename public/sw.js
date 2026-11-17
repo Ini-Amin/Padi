@@ -1,24 +1,16 @@
 /**
- * Service worker Padi — minimal, tanpa library (Workbox tidak dipakai agar
+ * Service worker Padi: minimal, tanpa library (Workbox tidak dipakai agar
  * build tetap di bawah target 500 KB dokumen 04).
  *
- * Strategi:
- * - Navigasi: network-first, fallback ke cache (HTML selalu segar saat
- *   online; app tetap bisa dibuka saat offline).
- * - Aset same-origin (JS/CSS hasil build, graph.json, ikon): cache-first,
- *   diisi saat pertama kali diambil. Nama file build mengandung hash konten,
- *   jadi cache-first aman untuk aset tersebut.
- * - Hanya request GET same-origin yang disentuh; request lain diteruskan.
+ * Navigasi: network-first, fallback cache. Aset same-origin: cache-first
+ * (nama file build mengandung hash konten, jadi aman). Hanya request GET
+ * same-origin yang disentuh; request lain diteruskan.
  *
- * Update: naikkan `CACHE` (misal `padi-v2`) setiap rilis — cache lama
- * dihapus saat aktivasi. `skipWaiting` + `clients.claim` membuat versi baru
- * langsung aktif tanpa menunggu tab ditutup.
- *
- * Data user (IndexedDB/Dexie) sudah lokal, jadi app berfungsi penuh offline
- * setelah pertama kali dimuat.
+ * Update: naikkan `CACHE` setiap rilis. Cache lama dihapus saat aktivasi;
+ * `skipWaiting` + `clients.claim` membuat versi baru langsung aktif.
  */
 
-const CACHE = 'padi-v2';
+const CACHE = 'padi-v3';
 
 // Path RELATIF (bukan absolut mulai '/'): service worker disajikan dari
 // /padi/sw.js di GitHub Pages, jadi path absolut akan salah menunjuk root

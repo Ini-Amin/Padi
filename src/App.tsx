@@ -1,20 +1,10 @@
 /**
- * Shell app + router hash sederhana (dokumen 05 §2: tanpa lazy loading di MVP).
- * Rute:
- *   #/                  Beranda (masalah aktif + ranking matching)
- *   #/masalah           Daftar masalah
- *   #/masalah/baru      Flow nyatakan masalah (pertanyaan terbimbing)
- *   #/masalah/:id       Detail masalah + ranking
- *   #/sesi/:id          Layar sesi (timer + penilaian)
- *   #/discovery         Guided discovery (jalur cadangan)
- *   #/peta              Peta framework (graph SVG + daftar bertema)
- *   #/framework/:id     Detail framework
- *   #/catch-up          Sesi catch-up (re-use terlewat >3 hari)
- *   #/progres           Progres (XP, streak, metrik toolbox)
- *   #/onboarding        Ulang onboarding (dari layar Progres)
+ * Shell app + router hash sederhana (dokumen 05 §2: tanpa lazy loading
+ * di MVP). Rute didefinisikan di tipe `Route` dan `parseHash` di bawah.
  *
- * Gate first-run (PRD M0): sebelum onboarding selesai, SEMUA rute diganti
- * layar onboarding — user yang sudah selesai tidak pernah dipaksa mengulang.
+ * Gate first-run (PRD M0 revisi 17 Nov 2026): sebelum onboarding selesai,
+ * SEMUA rute diganti layar onboarding problem-first. User yang sudah
+ * selesai tidak pernah dipaksa mengulang.
  */
 import { useEffect, useState } from 'react';
 import { seedDatabase, tandaiReuseTerlewat } from './db';
@@ -119,7 +109,16 @@ export function App(): React.JSX.Element {
   };
 
   return (
-    <div className="pembungkus">
+    <div className={`pembungkus${route.nama === 'peta' ? ' lebar' : ''}`}>
+      <button
+        className="lewati-konten"
+        type="button"
+        onClick={() =>
+          document.getElementById('konten-utama')?.focus()
+        }
+      >
+        Lewati ke konten
+      </button>
       <header className="kepala">
         <a className="merek" href="#/">
           Padi
@@ -136,9 +135,9 @@ export function App(): React.JSX.Element {
           </a>
         </nav>
       </header>
-      <main>
+      <main id="konten-utama" tabIndex={-1}>
         {error ? (
-          <div className="pesan-error">
+          <div className="pesan-error" role="alert">
             <p>Tidak bisa membuka Padi: {error}</p>
             <button
               className="tombol-garis"
@@ -151,7 +150,7 @@ export function App(): React.JSX.Element {
         ) : !siap ? (
           <p className="muted">Memuat…</p>
         ) : route.nama === 'onboarding' ? (
-          // Pengulangan eksplisit dari layar Progres — selalu tampil, apa pun
+          // Pengulangan eksplisit dari layar Progres: selalu tampil, apa pun
           // status gate (tidak mengunci apa pun di baliknya).
           <Onboarding ulang />
         ) : !onboardingSelesai ? (
@@ -173,6 +172,9 @@ export function App(): React.JSX.Element {
           </>
         )}
       </main>
+      <footer className="kaki">
+        <p className="muted kecil">Padi. Data tersimpan di perangkat ini.</p>
+      </footer>
     </div>
   );
 }

@@ -2,7 +2,7 @@
  * Layar Catch-up (dokumen 07 §3.1): kejar re-use yang terlewat lebih dari
  * 3 hari, dikelompokkan maksimal 3 framework per sesi, 1 sesi per hari.
  * Satu sesi catch-up = satu framework (12'), memakai layar sesi yang sama
- * dengan re-use — termasuk memilih masalah BARU dan penilaian rubrik.
+ * dengan re-use, termasuk memilih masalah BARU dan penilaian rubrik.
  * Menyelesaikan catch-up menjadwalkan re-use berikutnya dalam rantai.
  */
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -38,7 +38,7 @@ export function CatchUp(): React.JSX.Element {
       <h1>Catch-up</h1>
       <p className="muted">
         Re-use yang terlewat lebih dari 3 hari dikelompokkan menjadi sesi
-        catch-up — maksimal 3 framework per sesi, 1 sesi per hari, yang paling
+        catch-up: maksimal 3 framework per sesi, 1 sesi per hari, yang paling
         lama tertinggal didahulukan.
       </p>
 
@@ -64,7 +64,7 @@ export function CatchUp(): React.JSX.Element {
           {kelompok.map((k, i) => (
             <div className="kartu" key={k.tanggal}>
               <h2>
-                Sesi {i + 1} —{' '}
+                Sesi {i + 1}:{' '}
                 {k.tanggal === hariIni() ? 'hari ini' : formatTanggal(k.tanggal)}
               </h2>
               {k.items.map((item) => (

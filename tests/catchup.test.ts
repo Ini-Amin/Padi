@@ -1,5 +1,5 @@
 /**
- * Uji model layar catch-up — catchup.ts (dokumen 07 §3.1).
+ * Uji model layar catch-up: catchup.ts (dokumen 07 §3.1).
  * Pengelompokan sendiri diuji di scheduler.test.ts; di sini yang diuji
  * adalah lapisan tampilannya: nama framework, hari terlewat, dan input sesi.
  */

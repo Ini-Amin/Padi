@@ -1,5 +1,5 @@
 /**
- * Layar Sesi + Layar Penilaian (dokumen 04 §3.2) — dua tahap terpisah.
+ * Layar Sesi + Layar Penilaian (dokumen 04 §3.2): dua tahap terpisah.
  * Timer berbasis delta Date.now() (interval 1 detik + autosave 30 detik).
  * Sesi re-use meminta masalah BARU dan tidak menampilkan catatan lama
  * (retrieval practice, Prinsip 5a).
@@ -7,11 +7,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, selesaikanSesi } from '../db';
-import { usePadiStore } from '../store';
 import type { Artefak, ISODate, Skor } from '../domain';
 import { formatTanggal } from '../dates';
 import { RUBRIK } from '../rubrik';
-import { jenisArtefakDefault } from '../onboarding';
 import { labelJenisSesi, perluPilihMasalah } from '../sesi';
 import { navigasi } from '../App';
 
@@ -48,10 +46,8 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
   const [adaArtefak, setAdaArtefak] = useState(false);
   const [judulArtefak, setJudulArtefak] = useState('');
   const [isiArtefak, setIsiArtefak] = useState('');
-  // Jenis artefak default dari jawaban onboarding Q4 (bisa diubah di form).
-  const [jenisArtefak, setJenisArtefak] = useState<Artefak['jenis']>(() =>
-    jenisArtefakDefault(usePadiStore.getState().onboarding.membosankan),
-  );
+  // Jenis artefak default (bisa diubah di form).
+  const [jenisArtefak, setJenisArtefak] = useState<Artefak['jenis']>('teks');
   const [kLengkap, setKLengkap] = useState(false);
   const [kPrioritasi, setKPrioritasi] = useState(false);
   const [kRekomendasi, setKRekomendasi] = useState(false);
@@ -62,7 +58,6 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
   const elapsedRef = useRef(0);
   const catatanRef = useRef('');
 
-  // Inisialisasi sekali saat sesi dimuat.
   useEffect(() => {
     if (!sesi) return;
     if (perluPilihMasalah(sesi.jenis, sesi.masalah_id)) {
@@ -78,7 +73,6 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
     }
   }, [sesi, elapsedDetik, catatan]);
 
-  // Detak timer.
   useEffect(() => {
     if (!berjalan) return;
     const t = setInterval(() => {
@@ -100,7 +94,6 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
     return () => clearInterval(t);
   }, [berjalan, id]);
 
-  // Simpan saat komponen dilepas (tab ditutup / pindah layar).
   useEffect(() => {
     return () => {
       void db.sesi.update(id, {
@@ -113,8 +106,26 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
   if (sesi === undefined || framework === undefined || semuaMasalah === undefined) {
     return <p className="muted">Memuat…</p>;
   }
-  if (!sesi) return <p>Sesi tidak ditemukan.</p>;
-  if (!framework) return <p>Framework tidak ditemukan.</p>;
+  if (!sesi) {
+    return (
+      <div>
+        <p>Sesi tidak ditemukan.</p>
+        <a className="tombol-garis" href="#/">
+          Kembali ke Beranda
+        </a>
+      </div>
+    );
+  }
+  if (!framework) {
+    return (
+      <div>
+        <p>Framework tidak ditemukan.</p>
+        <a className="tombol-garis" href="#/">
+          Kembali ke Beranda
+        </a>
+      </div>
+    );
+  }
   if (sesi.selesai && tahap !== 'selesai') {
     return (
       <div>
@@ -195,7 +206,7 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
         <p className="muted">
           {labelJenisSesi(sesi.jenis)} menguji penguasaanmu: terapkan framework
           ini ke masalah yang belum pernah memakai framework ini. Catatan lama
-          tidak ditampilkan — kerjakan dari ingatan.
+          tidak ditampilkan. Kerjakan dari ingatan.
         </p>
         {kandidat.length === 0 ? (
           <p>
@@ -233,7 +244,7 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
         <h1>{labelJenisSesi(sesi.jenis)} selesai.</h1>
         {reuseBerikutnya ? (
           <p>
-            Re-use berikutnya: {formatTanggal(reuseBerikutnya)} — pakai{' '}
+            Re-use berikutnya: {formatTanggal(reuseBerikutnya)}. Pakai{' '}
             {framework.nama} untuk masalah lain.
           </p>
         ) : (
@@ -303,42 +314,76 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
             />
             <h3>Checklist kualitas</h3>
             <p className="muted kecil">
-              Artefak yang memenuhi ketiganya ditandai "berkualitas" — salah satu
-              syarat "dikuasai".
+              Artefak yang memenuhi ketiganya ditandai "berkualitas". Itu salah
+              satu syarat "dikuasai".
             </p>
             <label className="cek">
               <input type="checkbox" checked={kLengkap} onChange={(e) => setKLengkap(e.target.checked)} />
-              <span>Lengkap — semua elemen framework terisi.</span>
+              <span>Lengkap: semua elemen framework terisi.</span>
             </label>
             <label className="cek">
               <input type="checkbox" checked={kPrioritasi} onChange={(e) => setKPrioritasi(e.target.checked)} />
-              <span>Ada prioritasi — temuan diurutkan/diutamakan, bukan sekadar daftar.</span>
+              <span>Ada prioritasi: temuan diurutkan/diutamakan, bukan sekadar daftar.</span>
             </label>
             <label className="cek">
               <input type="checkbox" checked={kRekomendasi} onChange={(e) => setKRekomendasi(e.target.checked)} />
-              <span>Ada rekomendasi — minimal 1 rekomendasi konkret.</span>
+              <span>Ada rekomendasi: minimal 1 rekomendasi konkret.</span>
             </label>
           </>
         )}
 
         <h2>Seberapa jauh kamu bisa menerapkan?</h2>
-        {RUBRIK.map((r) => (
-          <div
-            key={r.skor}
-            className={`rubrik${skor === r.skor ? ' terpilih' : ''}`}
-            onClick={() => setSkor(r.skor)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') setSkor(r.skor);
-            }}
-          >
-            <span className="skor">{r.skor} — {r.judul}</span>
-            <p className="muted">{r.arti}</p>
-          </div>
-        ))}
+        <div
+          role="radiogroup"
+          aria-label="Skor penerapan"
+          onKeyDown={(e) => {
+            if (
+              e.key !== 'ArrowDown' &&
+              e.key !== 'ArrowUp' &&
+              e.key !== 'ArrowRight' &&
+              e.key !== 'ArrowLeft'
+            ) {
+              return;
+            }
+            e.preventDefault();
+            const arah =
+              e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1;
+            const berikut = (((skor ?? 0) + arah) % 4 + 4) % 4 as Skor;
+            setSkor(berikut);
+            document
+              .querySelector<HTMLElement>(`[data-skor="${berikut}"]`)
+              ?.focus();
+          }}
+        >
+          {RUBRIK.map((r) => (
+            <div
+              key={r.skor}
+              data-skor={r.skor}
+              className={`rubrik${skor === r.skor ? ' terpilih' : ''}`}
+              onClick={() => setSkor(r.skor)}
+              role="radio"
+              aria-checked={skor === r.skor}
+              tabIndex={
+                skor === r.skor || (skor === null && r.skor === 0) ? 0 : -1
+              }
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  setSkor(r.skor);
+                }
+              }}
+            >
+              <span className="skor">{r.skor}. {r.judul}</span>
+              <p className="muted">{r.arti}</p>
+            </div>
+          ))}
+        </div>
 
-        {error && <div className="pesan-error">{error}</div>}
+        {error && (
+          <div className="pesan-error" role="alert">
+            {error}
+          </div>
+        )}
         <div className="baris-tombol">
           <button
             className="tombol-utama"
@@ -373,12 +418,12 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
       <div className="timer">
         {String(menit).padStart(2, '0')}:{String(detik).padStart(2, '0')}
       </div>
-      <p className="muted" style={{ textAlign: 'center' }}>
+      <p className="muted tengah">
         {waktuHabis
-          ? 'Waktu target habis — lanjutkan bila perlu.'
+          ? 'Waktu target habis. Lanjutkan bila perlu.'
           : `dari ${sesi.durasi_target_menit} menit target`}
       </p>
-      <div className="baris-tombol" style={{ justifyContent: 'center' }}>
+      <div className="baris-tombol tengah-baris">
         {berjalan ? (
           <button className="tombol-garis" type="button" onClick={() => void jeda()}>
             Jeda

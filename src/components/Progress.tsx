@@ -1,13 +1,14 @@
 /**
  * Layar Progres (dokumen 04 §3.5, PRD M5): SATU-SATUNYA tempat XP dan streak
  * ditampilkan. Metrik toolbox (transfer rate, framework unik/bulan, masalah
- * aktif, penyebaran masalah) — TIDAK ADA tampilan "X dari 22".
+ * aktif, penyebaran masalah). TIDAK ADA tampilan "X dari 22".
  */
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, eksporData } from '../db';
 import { formatTanggal, hariIni, tambahHari } from '../dates';
 import { hitungStreak, totalXp } from '../gamification';
 import { kelompokCatchUp } from '../scheduler';
+import { labelJenisSesi } from '../sesi';
 import {
   frameworkUnikBulanIni,
   hitungTransferRate,
@@ -75,7 +76,7 @@ export function Progress(): React.JSX.Element {
         <div className="kotak">
           <div className="angka">{streak} hari</div>
           <p className="muted kecil">
-            Streak — hari berturut-turut dengan minimal 1 aktivitas. Streak tidak
+            Streak: hari berturut-turut dengan minimal 1 aktivitas. Streak tidak
             membuka atau mengunci apa pun.
           </p>
         </div>
@@ -84,7 +85,12 @@ export function Progress(): React.JSX.Element {
       <h2>7 hari terakhir</h2>
       <div className="grafik-hari">
         {tujuhHari.map((t) => (
-          <div key={t} className={`hari${aktivitas.has(t) ? ' aktif' : ''}`}>
+          <div
+            key={t}
+            role="img"
+            aria-label={`${formatTanggal(t)}: ${aktivitas.has(t) ? 'aktif' : 'tidak ada aktivitas'}`}
+            className={`hari${aktivitas.has(t) ? ' aktif' : ''}`}
+          >
             <div className="kotak-hari" />
             {formatTanggal(t).split(',')[0].slice(0, 3)}
           </div>
@@ -96,11 +102,11 @@ export function Progress(): React.JSX.Element {
         <div className="kotak">
           <div className="angka">
             {transfer.penyebut === 0
-              ? '—'
+              ? 'Belum ada'
               : `${Math.round(transfer.rate * 100)}%`}
           </div>
           <p className="muted kecil">
-            Transfer rate — {transfer.pembilang} dari {transfer.penyebut}{' '}
+            Transfer rate: {transfer.pembilang} dari {transfer.penyebut}{' '}
             framework sudah dipakai untuk masalah baru (90 hari terakhir).
           </p>
         </div>
@@ -149,8 +155,7 @@ export function Progress(): React.JSX.Element {
       </div>
       <p className="muted kecil">
         Impor data akan tersedia di potongan berikutnya. Mengulang onboarding
-        hanya memperbarui jawaban diagnostikmu — tidak ada yang terkunci di
-        baliknya.
+        hanya menyatakan masalah baru. Tidak ada yang terkunci di baliknya.
       </p>
 
       <h2>Log sesi (7 hari terakhir)</h2>
@@ -161,7 +166,7 @@ export function Progress(): React.JSX.Element {
         .map((s) => (
           <div className="baris-daftar" key={s.id}>
             <span>
-              {formatTanggal(s.tanggal)} · {s.jenis} · {s.durasi_menit} menit ·{' '}
+              {formatTanggal(s.tanggal)} · {labelJenisSesi(s.jenis)} · {s.durasi_menit} menit ·{' '}
               {s.selesai ? 'selesai' : 'belum memenuhi definisi selesai'}
               {s.skor !== null && ` · skor ${s.skor}`}
             </span>

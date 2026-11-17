@@ -1,5 +1,5 @@
 /**
- * Rubrik skor 0–3 (PRD M1, dokumen 02 US-1.4) — SATU-SATUNYA definisi rubrik.
+ * Rubrik skor 0–3 (PRD M1, dokumen 02 US-1.4): SATU-SATUNYA definisi rubrik.
  * Dipakai di penilaian sesi (Session.tsx) dan ditampilkan sekali di onboarding
  * (Onboarding.tsx, US-0.1). Jangan mengarang skala lain.
  */

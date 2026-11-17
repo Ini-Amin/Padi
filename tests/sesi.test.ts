@@ -1,5 +1,5 @@
 /**
- * Uji alur layar sesi — sesi.ts.
+ * Uji alur layar sesi: sesi.ts.
  * Re-use dan catch-up sama-sama meminta masalah BARU sebelum timer jalan
  * (retrieval practice); penerapan dan capstone tidak.
  */

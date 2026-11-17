@@ -1,5 +1,5 @@
 /**
- * Alur layar sesi — predikat murni (dipakai Session.tsx).
+ * Alur layar sesi: predikat murni (dipakai Session.tsx).
  * Dipisah agar bisa diuji tanpa DOM.
  */
 import type { JenisSesi } from './domain';
@@ -8,7 +8,7 @@ import type { JenisSesi } from './domain';
  * Apakah sesi ini harus memilih masalah dulu sebelum timer jalan?
  * Berlaku untuk re-use DAN catch-up tanpa masalah: keduanya menguji
  * penguasaan dengan menerapkan framework ke masalah BARU (retrieval
- * practice, Prinsip 5a) — masalah tidak boleh sudah pernah memakai
+ * practice, Prinsip 5a). Masalah tidak boleh sudah pernah memakai
  * framework yang sama.
  */
 export function perluPilihMasalah(

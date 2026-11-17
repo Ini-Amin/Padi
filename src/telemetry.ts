@@ -1,5 +1,5 @@
 /**
- * Telemetri — modul murni (dokumen 03 §7, PRD Tabel A).
+ * Telemetri: modul murni (dokumen 03 §7, PRD Tabel A).
  * Semua metrik DIHITUNG dari log pemakaian/sesi, bukan disimpan sebagai
  * entitas terpisah. Tidak ada data yang keluar dari perangkat.
  */

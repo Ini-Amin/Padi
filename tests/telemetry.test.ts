@@ -1,6 +1,6 @@
 /**
  * Uji telemetri + gamifikasi (dokumen 07 §3.1).
- * Metrik dihitung dari log — tanpa entitas terpisah.
+ * Metrik dihitung dari log, tanpa entitas terpisah.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -114,7 +114,7 @@ describe('xpUntukSesi + totalXp (PRD M5)', () => {
   });
 });
 
-describe('sesiSelesai — definisi tunggal (dokumen 03 §7)', () => {
+describe('sesiSelesai: definisi tunggal (dokumen 03 §7)', () => {
   const sesiDasar: Sesi = {
     id: 's-1',
     framework_id: 'pestel',

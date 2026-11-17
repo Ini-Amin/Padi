@@ -1,5 +1,5 @@
 /**
- * Aritmetika tanggal — modul murni, tanpa dependensi browser (dokumen 07 §3.1).
+ * Aritmetika tanggal: modul murni, tanpa dependensi browser (dokumen 07 §3.1).
  * Semua perhitungan memakai kalender UTC agar tidak terganggu DST maupun
  * zona waktu perangkat. Satu-satunya tempat tanggal dibuat/diubah.
  */
@@ -16,8 +16,8 @@ export function parseISODate(s: string): ISODate | null {
   const hari = Number(m[3]);
   if (bulan < 1 || bulan > 12 || hari < 1 || hari > 31) return null;
   const d = new Date(Date.UTC(tahun, bulan - 1, hari));
-  // Tanggal kalender yang tidak ada (misal 2026-02-30) akan "meluber" —
-  // tolak jika komponennya berubah setelah konstruksi.
+  // Tanggal kalender yang tidak ada (misal 2026-02-30) akan "meluber".
+  // Tolak jika komponennya berubah setelah konstruksi.
   if (
     d.getUTCFullYear() !== tahun ||
     d.getUTCMonth() !== bulan - 1 ||

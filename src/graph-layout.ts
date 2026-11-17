@@ -1,10 +1,10 @@
 /**
- * Tata letak graph SVG statis (M3) — modul murni, tanpa dependensi browser.
+ * Tata letak graph SVG statis (M3): modul murni, tanpa dependensi browser.
  *
  * Layout: satu kolom per tema (A–G, kiri ke kanan), node di dalam kolom
  * diurutkan `urutan_katalog`. Edge digambar dari pusat node ke pusat node
- * (node digambar di atas garis, jadi ujung garis tersembunyi di balik kotak)
- * — kecuali edge prasyarat, yang dipendekkan sampai tepi kotak target agar
+ * (node digambar di atas garis, jadi ujung garis tersembunyi di balik kotak),
+ * kecuali edge prasyarat, yang dipendekkan sampai tepi kotak target agar
  * panahnya terlihat.
  *
  * Edge paralel (pasangan node yang sama punya 2 tipe edge, misal
@@ -28,8 +28,8 @@ export const NAMA_PENDEK_TEMA: Record<Tema, string> = {
 
 export const LEBAR_KOLOM = 148;
 export const LEBAR_NODE = 136;
-export const TINGGI_NODE = 46;
-export const JARAK_BARIS = 60;
+export const TINGGI_NODE = 64;
+export const JARAK_BARIS = 78;
 export const MARGIN_X = 16;
 export const MARGIN_BAWAH = 16;
 export const NODE_Y_AWAL = 40;
@@ -69,7 +69,7 @@ const MAKS_KARAKTER_BARIS = 18;
 
 /**
  * Bagi label menjadi maksimal 2 baris (≤18 karakter per baris, dipotong di
- * batas kata — 18 karakter ≈ 114px pada font 12px, muat di kotak 136px).
+ * batas kata: 18 karakter ≈ 122px pada font 13px, muat di kotak 136px).
  * Satu kata yang lebih panjang dari batas dipotong dengan "…".
  */
 export function bungkusLabel(label: string): string[] {
@@ -125,7 +125,7 @@ export const GAYA_EDGE: Record<TipeEdge, GayaEdge> = {
   prasyarat: { stroke: 'var(--hijau)', dasharray: null, lebar: 2, panah: true },
   satu_tema: { stroke: 'var(--abu-garis)', dasharray: null, lebar: 1.5, panah: false },
   dipakai_bersama: { stroke: 'var(--biru)', dasharray: '6 3', lebar: 1.5, panah: false },
-  kontras: { stroke: 'var(--merah)', dasharray: '2 3', lebar: 1.5, panah: false },
+  kontras: { stroke: 'var(--merah)', dasharray: '3 3', lebar: 1.5, panah: false },
 };
 
 export const LABEL_EDGE: Record<TipeEdge, string> = {

@@ -1,7 +1,7 @@
 /**
- * Gamifikasi dasar — modul murni (PRD M5, dokumen 03 §2.8).
+ * Gamifikasi dasar: modul murni (PRD M5, dokumen 03 §2.8).
  * XP: sesi penerapan selesai 100, re-use selesai 50, artefak berkualitas +50,
- * skor sesi 3 +25. `total_xp = sum(xp_ledger)` — dihitung, bukan akumulator.
+ * skor sesi 3 +25. `total_xp = sum(xp_ledger)`, dihitung, bukan akumulator.
  * XP hanya naik; streak tidak pernah mengunci apa pun.
  */
 import type { ISODate, Sesi, Skor, XpLedgerEntry } from './domain';
@@ -50,7 +50,7 @@ export function sesiSelesai(sesi: Sesi): boolean {
 /**
  * Streak: hari berturut-turut dengan ≥1 aktivitas, dihitung mundur dari
  * hari ini. Jika hari ini belum ada aktivitas, streak dihitung dari kemarin
- * (masih hidup — putus hanya jika 1 hari penuh tanpa aktivitas).
+ * (masih hidup, putus hanya jika 1 hari penuh tanpa aktivitas).
  * `aktivitas` = himpunan tanggal yang punya ≥1 record sesi.
  */
 export function hitungStreak(aktivitas: ReadonlySet<string>, hariIni: ISODate): number {
