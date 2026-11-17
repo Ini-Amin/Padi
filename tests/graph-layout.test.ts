@@ -137,13 +137,20 @@ describe('hitungLayout: edge', () => {
       const titik = uraianTitik(e.d);
       const awal = titik[0];
       const akhir = titik[titik.length - 1];
-      // Awal: di salah satu tepi vertikal kotak sumber.
+      // Awal: di salah satu tepi vertikal kotak sumber, atau di tepi
+      // atas/bawah (edge satu kolom baris bersebelahan keluar lurus).
+      const awalDiTepiTegak =
+        (awal.x === dari.x || awal.x === dari.x + dari.lebar) &&
+        awal.y >= dari.y &&
+        awal.y <= dari.y + dari.tinggi;
+      const awalDiTepiDatar =
+        (awal.y === dari.y || awal.y === dari.y + dari.tinggi) &&
+        awal.x >= dari.x &&
+        awal.x <= dari.x + dari.lebar;
       expect(
-        awal.x === dari.x || awal.x === dari.x + dari.lebar,
-        `${e.dari}→${e.ke}: awal x=${awal.x}`,
+        awalDiTepiTegak || awalDiTepiDatar,
+        `${e.dari}→${e.ke}: awal x=${awal.x} y=${awal.y}`,
       ).toBe(true);
-      expect(awal.y).toBeGreaterThanOrEqual(dari.y);
-      expect(awal.y).toBeLessThanOrEqual(dari.y + dari.tinggi);
       // Akhir: di tepi kotak target, atau ≤2px di luarnya bila berpanah.
       const dx = Math.max(ke.x - akhir.x, 0, akhir.x - (ke.x + ke.lebar));
       const dy = Math.max(ke.y - akhir.y, 0, akhir.y - (ke.y + ke.tinggi));
@@ -300,6 +307,110 @@ describe('hitungLayout: edge hanya lewat gutter (property test)', () => {
   });
 });
 
+describe('hitungLayout: putaran 2 (panah, margin luar, lajur)', () => {
+  it('edge prasyarat baris bersebelahan lurus vertikal 12px (panah di batang lurus)', () => {
+    // 5 dari 6 panah adalah satu kolom baris bersebelahan; semuanya
+    // harus berupa garis lurus 2 titik sepanjang 12px (celah 14px
+    // dikurangi mundur panah 2px), bukan jog dengan segmen 0,5px.
+    for (const [dari, ke] of [
+      ['pestel', 'porter-5f'],
+      ['value-chain', 'vrio'],
+      ['vrio', 'core-competencies'],
+      ['lewin', 'kotter-8-step'],
+      ['balanced-scorecard', 'okrs'],
+    ] as const) {
+      const edge = layout.edges.find(
+        (e) => e.dari === dari && e.ke === ke && e.panah,
+      )!;
+      const titik = uraianTitik(edge.d);
+      expect(titik, `${dari}→${ke}`).toHaveLength(2);
+      expect(titik[0].x).toBe(titik[1].x);
+      expect(Math.abs(titik[1].y - titik[0].y)).toBe(12);
+    }
+  });
+
+  it('panah siku terakhir (ansoff→mckinsey-3-horizons) duduk di batang ≥6px', () => {
+    const edge = layout.edges.find(
+      (e) => e.dari === 'ansoff' && e.ke === 'mckinsey-3-horizons',
+    )!;
+    const titik = uraianTitik(edge.d);
+    const terakhir = Math.hypot(
+      titik[titik.length - 1].x - titik[titik.length - 2].x,
+      titik[titik.length - 1].y - titik[titik.length - 2].y,
+    );
+    // Marker panah 7px, 5,6px di belakang endpoint: 6px cukup.
+    expect(terakhir).toBeGreaterThanOrEqual(6);
+  });
+
+  it('edge satu kolom kolom G lewat gutter kiri, bukan margin kanan', () => {
+    const aida = layout.nodes.find((n) => n.id === 'aida')!;
+    const edge = layout.edges.find(
+      (e) => e.dari === 'balanced-scorecard' && e.ke === 'aida',
+    )!;
+    const titik = uraianTitik(edge.d);
+    // Keluar tepi kiri balanced-scorecard, masuk tepi kiri AIDA.
+    expect(titik[0].x).toBe(910);
+    expect(titik[titik.length - 1].x).toBe(aida.x);
+    // Run vertikal di celah F-G (898..910), bukan di margin kanan
+    // (tepi kanan kartu G = 1046).
+    expect(titik[1].x).toBeGreaterThanOrEqual(898);
+    expect(titik[1].x).toBeLessThanOrEqual(910);
+    expect(titik[1].x).toBe(titik[2].x);
+  });
+
+  it('tidak ada waypoint di margin luar viewBox (semua di dalam kotak node 22..1046 / 40..416)', () => {
+    for (const e of layout.edges) {
+      for (const t of uraianTitik(e.d)) {
+        expect(t.x, `${e.dari}→${e.ke} x=${t.x}`).toBeGreaterThanOrEqual(22);
+        expect(t.x, `${e.dari}→${e.ke} x=${t.x}`).toBeLessThanOrEqual(1046);
+        expect(t.y, `${e.dari}→${e.ke} y=${t.y}`).toBeGreaterThanOrEqual(40);
+        expect(t.y, `${e.dari}→${e.ke} y=${t.y}`).toBeLessThanOrEqual(416);
+      }
+    }
+  });
+
+  it('segmen pertama/terakhir tidak berbalik arah dan ≥2,9px; segmen terakhir panah ≥5,9px', () => {
+    // Batas geometri: stub horizontal maksimal 9px (gutter 12px) dan
+    // stub vertikal maksimal 10px (celah 14px); 10px untuk semua edge
+    // berjog tidak mungkin, yang dijamin adalah tidak ada segmen
+    // berbalik arah (offset ≤3 < stub nominal 4) dan panah ≥5,9px.
+    for (const e of layout.edges) {
+      const t = uraianTitik(e.d);
+      const pertama = Math.hypot(t[1].x - t[0].x, t[1].y - t[0].y);
+      const terakhir = Math.hypot(
+        t[t.length - 1].x - t[t.length - 2].x,
+        t[t.length - 1].y - t[t.length - 2].y,
+      );
+      expect(pertama, `${e.dari}→${e.ke} segmen pertama`).toBeGreaterThanOrEqual(2.9);
+      expect(terakhir, `${e.dari}→${e.ke} segmen terakhir`).toBeGreaterThanOrEqual(2.9);
+      if (e.panah) {
+        expect(terakhir, `${e.dari}→${e.ke} segmen terakhir panah`).toBeGreaterThanOrEqual(5.9);
+      }
+    }
+  });
+
+  it('semua lajur di 6px tengah gutter (offset ≤3px dari tengah gutter/baris)', () => {
+    // Tengah gutter antar kolom: 164+148k; tengah node: 90+148k.
+    const pusatX = [...Array(6)].map((_, k) => 164 + 148 * k)
+      .concat([...Array(7)].map((_, k) => 90 + 148 * k));
+    // Tengah baris: 72+78r; tengah celah baris: 111+78r.
+    const pusatY = [...Array(5)].map((_, r) => 72 + 78 * r)
+      .concat([...Array(4)].map((_, r) => 111 + 78 * r));
+    for (const e of layout.edges) {
+      const t = uraianTitik(e.d);
+      for (let i = 1; i < t.length; i++) {
+        if (t[i].x === t[i - 1].x) {
+          const jarak = Math.min(...pusatX.map((c) => Math.abs(t[i].x - c)));
+          expect(jarak, `${e.dari}→${e.ke} run vertikal x=${t[i].x}`).toBeLessThanOrEqual(3.01);
+        } else {
+          const jarak = Math.min(...pusatY.map((c) => Math.abs(t[i].y - c)));
+          expect(jarak, `${e.dari}→${e.ke} run horizontal y=${t[i].y}`).toBeLessThanOrEqual(3.01);
+        }
+      }
+    }
+  });
+});
+
 describe('hitungLayout: routing fixture', () => {
   // Kolom A 3 node, kolom B 1 node (hanya baris 0), kolom C 3 node.
   const fw = [
@@ -337,7 +448,11 @@ describe('hitungLayout: routing fixture', () => {
     ]);
     expect(hasil.edges).toHaveLength(2);
     const [d1, d2] = hasil.edges.map((e) => uraianTitik(e.d));
-    // Segmen vertikal (waypoint ke-2) berada di x berbeda.
+    // Baris bersebelahan: garis lurus vertikal 2 titik lewat celah
+    // baris; kedua edge terpisah di x oleh lajur berbeda, dan titik
+    // akhir panah berhenti 2px sebelum tepi (jadi y-nya berbeda).
+    expect(d1).toHaveLength(2);
+    expect(d2).toHaveLength(2);
     expect(d1[1].x).not.toBe(d2[1].x);
     expect(d1[1].y).not.toBe(d2[1].y);
   });

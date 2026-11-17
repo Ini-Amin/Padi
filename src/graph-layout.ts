@@ -6,11 +6,14 @@
  * 12px, celah antar baris 14px.
  *
  * Edge dirute HANYA lewat gutter (celah antar node), tidak pernah melewati
- * area kartu node lain, dan dipendekkan sampai tepi kotak di kedua ujungnya
- * (panah prasyarat berhenti 2px sebelum tepi agar ujung panah mendarat
- * tepat di tepi). Semua path berupa polyline siku (M/L), tanpa kurva:
- * - Satu kolom: keluar tepi kanan sumber, jog vertikal di gutter kanan
- *   kolom (tengah celah 12px), masuk tepi kanan target.
+ * area kartu node lain dan tidak pernah memakai margin luar viewBox.
+ * Semua path berupa polyline siku (M/L), tanpa kurva:
+ * - Satu kolom, baris bersebelahan: garis lurus vertikal 14px lewat
+ *   celah baris, tanpa jog (panah duduk di batang lurus yang panjang).
+ * - Satu kolom, baris tidak bersebelahan: keluar tepi samping sumber,
+ *   jog vertikal di gutter samping kolom, masuk tepi samping target.
+ *   Sisi gutter dipilih penyeimbang (gutter paling lengang); kolom G
+ *   selalu memakai gutter kiri (celah F-G), kolom A selalu kanan.
  * - Lintas kolom, sebaris, tanpa node antara di baris itu: garis lurus
  *   tepi-ke-tepi.
  * - Lintas kolom, kolom bersebelahan: jog vertikal di gutter bersama.
@@ -18,11 +21,16 @@
  *   (tengah celah 14px): keluar, jog vertikal ke celah baris, jalan
  *   horizontal di celah itu, jog vertikal ke baris target, masuk.
  *
- * Edge yang berbagi satu gutter (paralel maupun pasangan berbeda yang
- * kebetulan memakai gutter yang sama) dipisahkan ke lajur berbeda lewat
- * pewarnaan greedy deterministik: tiap edge mendapat satu offset yang
- * dipakai di semua segmennya, |offset| ≤ 4,5px agar garis (lebar maks 2px)
- * tetap di dalam gutter tersempit (12px).
+ * Edge yang berbagi satu gutter dipisahkan ke lajur berbeda lewat
+ * pewarnaan greedy deterministik (satu offset per edge, |offset| ≤ 3px,
+ * jadi semua garis tetap di 6px tengah gutter). Edge berpanah diproses
+ * lebih dulu dan memilih lajur yang memanjangkan segmen terakhirnya,
+ * supaya marker panah (7px, 5,6px di belakang endpoint) selalu duduk
+ * di atas batang lurus. Batas geometri: stub horizontal maksimal 9px
+ * (gutter 12px) dan stub vertikal maksimal 10px (celah 14px), jadi
+ * segmen pertama/terakhir edge berjog tidak bisa 10px semua; yang
+ * dijamin adalah tidak ada segmen berbalik arah dan segmen terakhir
+ * panah ≥ 6px.
  */
 import type { Edge, Framework, StatusFramework, Tema, TipeEdge } from './domain';
 
@@ -244,6 +252,12 @@ interface RuteEdge {
   /** Waypoint polyline; titik pertama/terakhir di tepi kotak ujung. */
   titik: Titik[];
   segmen: SegmenGutter[];
+  /**
+   * Arah offset yang memanjangkan segmen terakhir (hanya untuk edge
+   * berpanah yang berjog; 0 bila tidak ada preferensi). -1 berarti
+   * segmen terakhir memanjang bila offset negatif, +1 sebaliknya.
+   */
+  preferensi: -1 | 0 | 1;
 }
 
 function kolomNode(node: NodeTataLetak): number {
@@ -259,6 +273,8 @@ function barisNode(node: NodeTataLetak): number {
 /**
  * Rute satu edge lewat gutter saja (offset 0). Titik pertama/terakhir
  * dihitung dengan `titikBatasKotak` agar menempel di tepi kotak.
+ * `sisi` hanya berlaku untuk edge satu kolom tak bersebelahan: gutter
+ * samping yang dipakai ('kanan' default; 'kiri' untuk kolom G).
  */
 function ruteEdge(
   dari: NodeTataLetak,
@@ -267,20 +283,42 @@ function ruteEdge(
   panah: boolean,
   terisi: ReadonlySet<string>,
   barisTerbawah: number,
+  sisi: 'kanan' | 'kiri' = 'kanan',
 ): RuteEdge {
   const p1 = pusat(dari);
   const p2 = pusat(ke);
   const hw = LEBAR_NODE / 2;
+  const hh = TINGGI_NODE / 2;
   const segmen: SegmenGutter[] = [];
   let titik: Titik[];
+  let preferensi: -1 | 0 | 1 = 0;
 
   if (dari.x === ke.x) {
-    // Satu kolom: keluar tepi kanan, jog vertikal di gutter kanan kolom,
-    // masuk tepi kanan target.
-    const keluar = titikBatasKotak(p1.x, p1.y, 1, 0, hw, TINGGI_NODE / 2);
-    const masuk = titikBatasKotak(p2.x, p2.y, 1, 0, hw, TINGGI_NODE / 2);
-    const gutterX = keluar.x + GUTTER_X;
-    const akhirX = masuk.x + (panah ? MUNDUR_PANAH : 0);
+    const baris1 = barisNode(dari);
+    const baris2 = barisNode(ke);
+    if (Math.abs(baris1 - baris2) === 1) {
+      // Baris bersebelahan: garis lurus vertikal lewat celah baris
+      // (14px), tanpa jog. Panah (bila ada) duduk di batang 12px.
+      const keBawah = p2.y > p1.y;
+      const awal = { x: p1.x, y: keBawah ? p1.y + hh : p1.y - hh };
+      const akhir = {
+        x: p2.x,
+        y: keBawah
+          ? p2.y - hh - (panah ? MUNDUR_PANAH : 0)
+          : p2.y + hh + (panah ? MUNDUR_PANAH : 0),
+      };
+      titik = [awal, akhir];
+      segmen.push({ sumbu: 'x', tetap: p1.x, dari: awal.y, ke: akhir.y });
+      return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen, preferensi };
+    }
+    // Baris tidak bersebelahan: keluar tepi samping, jog vertikal di
+    // gutter samping kolom, masuk tepi samping target. Sisi gutter
+    // dipilih penyeimbang di hitungLayout (kolom G selalu kiri).
+    const arah = sisi === 'kanan' ? 1 : -1;
+    const keluar = titikBatasKotak(p1.x, p1.y, arah, 0, hw, hh);
+    const masuk = titikBatasKotak(p2.x, p2.y, arah, 0, hw, hh);
+    const gutterX = keluar.x + arah * GUTTER_X;
+    const akhirX = masuk.x + arah * (panah ? MUNDUR_PANAH : 0);
     titik = [
       { x: keluar.x, y: p1.y },
       { x: gutterX, y: p1.y },
@@ -292,7 +330,9 @@ function ruteEdge(
       { sumbu: 'x', tetap: gutterX, dari: p1.y, ke: p2.y },
       { sumbu: 'y', tetap: p2.y, dari: gutterX, ke: akhirX },
     );
-    return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen };
+    // Segmen terakhir: 4+delta (sisi kanan) atau 4-delta (sisi kiri).
+    if (panah) preferensi = sisi === 'kanan' ? 1 : -1;
+    return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen, preferensi };
   }
 
   const arah = p2.x > p1.x ? 1 : -1;
@@ -326,8 +366,13 @@ function ruteEdge(
       { x: akhirX, y: p1.y },
     ];
     segmen.push({ sumbu: 'y', tetap: p1.y, dari: keluar.x, ke: akhirX });
-    return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen };
+    return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen, preferensi };
   }
+
+  // Edge berjog yang berpanah: segmen terakhir 4-delta (bergerak ke
+  // kanan) atau 4+delta (bergerak ke kiri); preferensi lajur menjaga
+  // marker 7px tetap duduk di batang lurus.
+  if (panah) preferensi = arah === 1 ? -1 : 1;
 
   if (gutterSumberX === gutterTargetX) {
     // Kolom bersebelahan: satu jog vertikal di gutter bersama.
@@ -342,11 +387,10 @@ function ruteEdge(
       { sumbu: 'x', tetap: gutterSumberX, dari: p1.y, ke: p2.y },
       { sumbu: 'y', tetap: p2.y, dari: gutterSumberX, ke: akhirX },
     );
-    return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen };
+    return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen, preferensi };
   }
 
   // Siku (elbow) lewat celah baris terdekat dari baris sumber.
-  const hh = TINGGI_NODE / 2;
   let gutterY: number;
   if (p2.y > p1.y) gutterY = p1.y + hh + GUTTER_Y;
   else if (p2.y < p1.y) gutterY = p1.y - hh - GUTTER_Y;
@@ -368,7 +412,31 @@ function ruteEdge(
     { sumbu: 'x', tetap: gutterTargetX, dari: gutterY, ke: p2.y },
     { sumbu: 'y', tetap: p2.y, dari: gutterTargetX, ke: akhirX },
   );
-  return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen };
+  return { dari: dari.id, ke: ke.id, tipe, panah, titik, segmen, preferensi };
+}
+
+/**
+ * Kedalaman maksimum tumpukan interval [dari, ke) (setengah terbuka:
+ * interval yang hanya bersentuhan di satu titik tidak dihitung
+ * bertumpuk, konsisten dengan `segmenBertabrakan`). Dipakai penyeimbang
+ * sisi gutter: kedalaman = jumlah lajur yang dibutuhkan gutter itu.
+ */
+function kedalamanMaks(runs: { dari: number; ke: number }[]): number {
+  const kejadian: [number, number][] = [];
+  for (const r of runs) {
+    const awal = Math.min(r.dari, r.ke);
+    const akhir = Math.max(r.dari, r.ke);
+    if (akhir > awal) kejadian.push([awal, 1], [akhir, -1]);
+  }
+  // Di y yang sama, akhir (-1) diproses sebelum awal (+1).
+  kejadian.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let berjalan = 0;
+  let maks = 0;
+  for (const [, d] of kejadian) {
+    berjalan += d;
+    maks = Math.max(maks, berjalan);
+  }
+  return maks;
 }
 
 /** Dua segmen bertabrakan bila memakai gutter yang sama dengan tumpang tindih > 0. */
@@ -385,16 +453,25 @@ function ruteBertabrakan(a: RuteEdge, b: RuteEdge): boolean {
 
 /**
  * Pewarnaan lajur greedy yang deterministik: edge yang bertabrakan di satu
- * gutter mendapat lajur berbeda. Mengembalikan offset tiap edge (satu nilai
- * per edge, dipakai di semua segmennya), simetris di sekitar 0 dan selalu
- * |offset| ≤ 4,5 agar garis tetap di dalam gutter tersempit (12px).
+ * gutter mendapat lajur berbeda. Edge berpanah diproses lebih dulu dan
+ * memilih lajur yang memanjangkan segmen terakhirnya (preferensi negatif
+ * mengambil lajur terendah, positif mengambil lajur tertinggi yang bebas),
+ * supaya marker panah tidak menutupi jog. Offset simetris di sekitar 0
+ * dan selalu |offset| ≤ 3, jadi semua garis tetap di 6px tengah gutter
+ * (tidak lebih dekat dari 2px ke tepi kartu, menghitung lebar garis 2px).
  */
 function hitungOffsetLajur(rute: RuteEdge[]): number[] {
+  const kunci = (r: RuteEdge): string => `${r.dari}|${r.ke}|${r.tipe}`;
+  const fase = (r: RuteEdge): number =>
+    r.preferensi < 0 ? 0 : r.preferensi === 0 ? 1 : 2;
   const urutan = rute
     .map((_, i) => i)
     .sort((a, b) => {
-      const ka = `${rute[a].dari}|${rute[a].ke}|${rute[a].tipe}`;
-      const kb = `${rute[b].dari}|${rute[b].ke}|${rute[b].tipe}`;
+      const fa = fase(rute[a]);
+      const fb = fase(rute[b]);
+      if (fa !== fb) return fa - fb;
+      const ka = kunci(rute[a]);
+      const kb = kunci(rute[b]);
       return ka < kb ? -1 : ka > kb ? 1 : 0;
     });
   const lajur = new Array<number>(rute.length).fill(-1);
@@ -406,27 +483,46 @@ function hitungOffsetLajur(rute: RuteEdge[]): number[] {
         dipakai.add(lajur[j]);
       }
     }
-    let l = 0;
-    while (dipakai.has(l)) l++;
+    let l: number;
+    if (rute[i].preferensi > 0) {
+      // Lajur tertinggi yang bebas; bila semua terpakai, buka lajur baru.
+      l = jumlahLajur;
+      for (let c = jumlahLajur - 1; c >= 0; c--) {
+        if (!dipakai.has(c)) {
+          l = c;
+          break;
+        }
+      }
+    } else {
+      l = 0;
+      while (dipakai.has(l)) l++;
+    }
     lajur[i] = l;
     jumlahLajur = Math.max(jumlahLajur, l + 1);
   }
-  const langkah =
-    jumlahLajur <= 1 ? 0 : Math.min(7, 9 / (jumlahLajur - 1));
+  const langkah = jumlahLajur <= 1 ? 0 : 6 / (jumlahLajur - 1);
   return lajur.map(
     (l) => Math.round(((l - (jumlahLajur - 1) / 2) * langkah) * 100) / 100,
   );
 }
 
 /**
- * Terapkan offset lajur ke waypoint: titik pertama/terakhir menempel di
- * tepi kotak sehingga hanya digeser sepanjang tepi (sumbu y); titik sudut
- * digeser di kedua sumbu agar segmen horizontal dan vertikal sama-sama
- * berada di lajurnya.
+ * Terapkan offset lajur ke waypoint. Titik pertama/terakhir menempel di
+ * tepi kotak sehingga hanya digeser sepanjang tepi (tegak lurus segmen
+ * ujung: sumbu y untuk segmen horizontal, sumbu x untuk vertikal);
+ * titik sudut digeser di kedua sumbu agar segmen horizontal dan vertikal
+ * sama-sama berada di lajurnya.
  */
 function terapkanOffset(titik: Titik[], delta: number): Titik[] {
   return titik.map((t, i) => {
-    if (i === 0 || i === titik.length - 1) return { x: t.x, y: t.y + delta };
+    if (i === 0) {
+      const vertikal = titik[1].x === t.x;
+      return vertikal ? { x: t.x + delta, y: t.y } : { x: t.x, y: t.y + delta };
+    }
+    if (i === titik.length - 1) {
+      const vertikal = titik[i - 1].x === t.x;
+      return vertikal ? { x: t.x + delta, y: t.y } : { x: t.x, y: t.y + delta };
+    }
     return { x: t.x + delta, y: t.y + delta };
   });
 }
@@ -485,15 +581,113 @@ export function hitungLayout(
 
   // Rute semua edge pada offset 0, lalu pisahkan yang berbagi gutter
   // ke lajur berbeda (pewarnaan greedy deterministik).
-  const rute: RuteEdge[] = [];
-  for (const e of edges) {
+  //
+  // Fase 1: edge lintas kolom (rutenya tetap). Kumpulkan run vertikal
+  // per gutter untuk penyeimbang sisi di fase 2.
+  const rutePerIndeks = new Map<number, RuteEdge>();
+  const vertikalPerGutter = new Map<number, { dari: number; ke: number }[]>();
+  const catatVertikal = (r: RuteEdge): void => {
+    for (const s of r.segmen) {
+      if (s.sumbu !== 'x') continue;
+      const daftar = vertikalPerGutter.get(s.tetap) ?? [];
+      daftar.push({ dari: s.dari, ke: s.ke });
+      vertikalPerGutter.set(s.tetap, daftar);
+    }
+  };
+  edges.forEach((e, i) => {
     const dari = byId.get(e.dari);
     const ke = byId.get(e.ke);
-    if (!dari || !ke) continue;
-    rute.push(
-      ruteEdge(dari, ke, e.tipe, GAYA_EDGE[e.tipe].panah, terisi, barisTerbawah),
+    if (!dari || !ke || dari.x === ke.x) return;
+    const r = ruteEdge(
+      dari,
+      ke,
+      e.tipe,
+      GAYA_EDGE[e.tipe].panah,
+      terisi,
+      barisTerbawah,
     );
+    rutePerIndeks.set(i, r);
+    catatVertikal(r);
+  });
+
+  // Fase 2: edge satu kolom tak bersebelahan — pilih sisi gutter yang
+  // paling lengang (kedalaman tumpukan terkecil), supaya lajur tidak
+  // menumpuk sampai menempel kartu. Kolom A hanya kanan dan kolom G
+  // hanya kiri: margin luar viewBox tidak pernah dipakai.
+  const sebar = edges
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => {
+      const dari = byId.get(e.dari);
+      const ke = byId.get(e.ke);
+      return (
+        dari !== undefined &&
+        ke !== undefined &&
+        dari.x === ke.x &&
+        Math.abs(barisNode(dari) - barisNode(ke)) > 1
+      );
+    })
+    .sort((a, b) => {
+      const ka = `${a.e.dari}|${a.e.ke}|${a.e.tipe}`;
+      const kb = `${b.e.dari}|${b.e.ke}|${b.e.tipe}`;
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
+    });
+  for (const { e, i } of sebar) {
+    const dari = byId.get(e.dari)!;
+    const ke = byId.get(e.ke)!;
+    const kolom = kolomNode(dari);
+    const p1 = pusat(dari);
+    const p2 = pusat(ke);
+    const calon = { dari: p1.y, ke: p2.y };
+    let sisi: 'kanan' | 'kiri';
+    if (kolom === 0) sisi = 'kanan';
+    else if (kolom === URUTAN_TEMA.length - 1) sisi = 'kiri';
+    else {
+      const gutterKanan = dari.x + dari.lebar + GUTTER_X;
+      const gutterKiri = dari.x - GUTTER_X;
+      const dKanan = kedalamanMaks([
+        ...(vertikalPerGutter.get(gutterKanan) ?? []),
+        calon,
+      ]);
+      const dKiri = kedalamanMaks([
+        ...(vertikalPerGutter.get(gutterKiri) ?? []),
+        calon,
+      ]);
+      sisi = dKiri < dKanan ? 'kiri' : 'kanan';
+    }
+    const r = ruteEdge(
+      dari,
+      ke,
+      e.tipe,
+      GAYA_EDGE[e.tipe].panah,
+      terisi,
+      barisTerbawah,
+      sisi,
+    );
+    rutePerIndeks.set(i, r);
+    catatVertikal(r);
   }
+
+  // Fase 3: edge satu kolom bersebelahan (lurus vertikal).
+  edges.forEach((e, i) => {
+    if (rutePerIndeks.has(i)) return;
+    const dari = byId.get(e.dari);
+    const ke = byId.get(e.ke);
+    if (!dari || !ke) return;
+    rutePerIndeks.set(
+      i,
+      ruteEdge(
+        dari,
+        ke,
+        e.tipe,
+        GAYA_EDGE[e.tipe].panah,
+        terisi,
+        barisTerbawah,
+      ),
+    );
+  });
+  const rute = edges
+    .map((_, i) => rutePerIndeks.get(i))
+    .filter((r): r is RuteEdge => r !== undefined);
   const offset = hitungOffsetLajur(rute);
 
   const edgesLayout: EdgeTataLetak[] = rute.map((r, i) => {
