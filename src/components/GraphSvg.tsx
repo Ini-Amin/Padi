@@ -22,6 +22,7 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
+import { usePadiStore } from '../store';
 import { LABEL_STATUS, hitungProgres } from '../status';
 import type { TipeEdge } from '../domain';
 import { useGerakanAktif } from '../gerakan';
@@ -69,6 +70,8 @@ export function GraphSvg(): React.JSX.Element {
   const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
   const edges = useLiveQuery(() => db.edges.toArray(), []);
   const gerakanAktif = useGerakanAktif();
+  const tampilkanSatuTema = usePadiStore((s) => s.tampilkanSatuTema);
+  const setTampilkanSatuTema = usePadiStore((s) => s.setTampilkanSatuTema);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [dipilihId, setDipilihId] = useState<string | null>(null);
   const [modeJalur, setModeJalur] = useState(false);
@@ -89,7 +92,16 @@ export function GraphSvg(): React.JSX.Element {
     return <p className="muted">Memuat peta…</p>;
   }
 
-  const layout = hitungLayout(frameworks, edges);
+  // Filter SEBELUM hitungLayout, supaya pewarnaan lajur berjalan pada
+  // edge yang terlihat saja dan lajur tersisa menyebar ulang ke tengah
+  // gutter (bukan lubang kosong di posisi lajur lama). Default sembunyi:
+  // satu_tema redundan dengan pengelompokan kolom, dan 15 edge abu itu
+  // yang membuat gutter A-B penuh (4 lajur → 3 saat disembunyikan).
+  const edgesTampil = tampilkanSatuTema
+    ? edges
+    : edges.filter((e) => e.tipe !== 'satu_tema');
+  const jumlahSembunyi = edges.length - edgesTampil.length;
+  const layout = hitungLayout(frameworks, edgesTampil);
   const keadaan = keadaanPeta(layout, hoverId, dipilihId, modeJalur);
   const dipilih = dipilihId
     ? frameworks.find((f) => f.id === dipilihId)
@@ -151,12 +163,24 @@ export function GraphSvg(): React.JSX.Element {
           Lainnya disembunyikan.
         </p>
       )}
+      {/* Checkbox native (aksesibilitas keyboard gratis). Perubahan
+          tampil/sembunyi instan — tidak ada animasi yang perlu
+          menghormati reduced-motion. Tersembunyi bersama graph di
+          bawah 804px (CSS): tanpa graph, toggle tidak ada gunanya. */}
+      <label className="peta-toggle">
+        <input
+          type="checkbox"
+          checked={tampilkanSatuTema}
+          onChange={(e) => setTampilkanSatuTema(e.target.checked)}
+        />
+        Tampilkan relasi satu tema
+      </label>
       <div className="peta-gulir">
         <svg
           className="peta-svg"
           viewBox={layout.viewBox}
           role="group"
-          aria-label={`Peta ${layout.nodes.length} framework dalam ${layout.edges.length} relasi, dikelompokkan per tema.`}
+          aria-label={`Peta ${layout.nodes.length} framework dalam ${layout.edges.length} relasi${jumlahSembunyi > 0 ? `, ${jumlahSembunyi} relasi satu tema disembunyikan` : ''}, dikelompokkan per tema.`}
           onClick={batalkan}
         >
           <defs>
@@ -308,8 +332,15 @@ export function GraphSvg(): React.JSX.Element {
             {URUTAN_LEGENDA.map((tipe, i) => {
               const gaya = GAYA_EDGE[tipe];
               const y = 304 + i * 22;
+              // Baris legenda meredup saat tipenya tidak tampil, supaya
+              // legenda tidak mengklaim garis yang tidak ada di peta.
+              const redup =
+                tipe === 'satu_tema' && !tampilkanSatuTema;
               return (
-                <g key={tipe}>
+                <g
+                  key={tipe}
+                  className={redup ? 'peta-legenda-redup' : undefined}
+                >
                   <line
                     x1={LEGENDA_X}
                     y1={y - 4}

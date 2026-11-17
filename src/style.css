@@ -594,6 +594,26 @@ pre.isi-artefak {
   margin: 12px 0;
 }
 
+/* Toggle relasi satu tema (checkbox native di atas peta). */
+.peta-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.peta-toggle input {
+  accent-color: var(--text);
+}
+
+/* Baris legenda yang tipenya tidak tampil: meredup, tapi tetap
+ * terbaca (bukan hilang) supaya user tahu ada yang disembunyikan. */
+.peta-legenda-redup {
+  opacity: 0.45;
+}
+
 .peta-svg {
   display: block;
   width: 100%;
@@ -683,7 +703,7 @@ pre.isi-artefak {
   display: none;
 }
 
-/* --- Judul beranimasi (Paket 3: split-type, huruf muncul berurutan) --- */
+/* --- Judul beranimasi (Paket 3: pemecah huruf vanilla, huruf muncul berurutan) --- */
 
 .judul-animasi .huruf {
   display: inline-block;
@@ -717,7 +737,8 @@ pre.isi-artefak {
  * dalamnya), tampilkan catatan bahwa daftar di bawah adalah tampilan
  * utama. */
 @media (max-width: 803px) {
-  .peta-gulir {
+  .peta-gulir,
+  .peta-toggle {
     display: none;
   }
 

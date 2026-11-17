@@ -6,7 +6,7 @@
  * hidup di Dexie, bukan di sini. Lihat db.ts.
  *
  * Persist dilakukan manual (bukan zustand/middleware `persist`, ~2 kB):
- * hanya dua field yang disimpan, dan formatnya sama dengan zustand persist
+ * hanya tiga field yang disimpan, dan formatnya sama dengan zustand persist
  * (`{ state, version }`) supaya instalasi lama tetap terbaca. Merge
  * onboarding dilakukan per-field (bukan timpa mentah seperti merge
  * default zustand), jadi instalasi lama yang menyimpan profil tanpa
@@ -33,11 +33,23 @@ interface PadiStore {
    */
   onboarding: ProfilOnboarding;
   setOnboarding: (profil: ProfilOnboarding) => void;
+  /**
+   * Tampilkan edge satu_tema di Peta (default SEMBUNYI = false).
+   * satu_tema adalah informasi redundan — pengelompokan tema yang
+   * sama sudah kelihatan dari kolomnya — dan menyembunyikannya
+   * mengurangi lajur di gutter yang padat (A-B 4 → 3 lajur).
+   * Pilihan user di-persist seperti pengaturan kecil lainnya.
+   */
+  tampilkanSatuTema: boolean;
+  setTampilkanSatuTema: (tampil: boolean) => void;
 }
 
 const KUNCI_STORE = 'padi-store';
 
-type SliceTersimpan = Pick<PadiStore, 'masalahAktifId' | 'onboarding'>;
+type SliceTersimpan = Pick<
+  PadiStore,
+  'masalahAktifId' | 'onboarding' | 'tampilkanSatuTema'
+>;
 
 /** Baca slice yang di-persist; rusak / tidak ada → kosong (pakai nilai awal). */
 function bacaTersimpan(): Partial<SliceTersimpan> {
@@ -49,9 +61,13 @@ function bacaTersimpan(): Partial<SliceTersimpan> {
     const state = data.state;
     if (!state || typeof state !== 'object') return {};
     const hasil: Partial<SliceTersimpan> = {};
-    const { masalahAktifId, onboarding } = state as Record<string, unknown>;
+    const { masalahAktifId, onboarding, tampilkanSatuTema } =
+      state as Record<string, unknown>;
     if (typeof masalahAktifId === 'string' || masalahAktifId === null) {
       hasil.masalahAktifId = masalahAktifId;
+    }
+    if (typeof tampilkanSatuTema === 'boolean') {
+      hasil.tampilkanSatuTema = tampilkanSatuTema;
     }
     if (onboarding && typeof onboarding === 'object') {
       hasil.onboarding = {
@@ -74,6 +90,8 @@ export const usePadiStore = create<PadiStore>()((set) => {
     setSesiBerjalan: (id) => set({ sesiBerjalanId: id }),
     onboarding: tersimpan.onboarding ?? profilOnboardingAwal(),
     setOnboarding: (profil) => set({ onboarding: profil }),
+    tampilkanSatuTema: tersimpan.tampilkanSatuTema ?? false,
+    setTampilkanSatuTema: (tampil) => set({ tampilkanSatuTema: tampil }),
   };
 });
 
@@ -84,7 +102,11 @@ usePadiStore.subscribe((s) => {
     localStorage.setItem(
       KUNCI_STORE,
       JSON.stringify({
-        state: { masalahAktifId: s.masalahAktifId, onboarding: s.onboarding },
+        state: {
+          masalahAktifId: s.masalahAktifId,
+          onboarding: s.onboarding,
+          tampilkanSatuTema: s.tampilkanSatuTema,
+        },
         version: 0,
       }),
     );

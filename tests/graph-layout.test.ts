@@ -24,6 +24,7 @@ import {
   keadaanPeta,
   labelNode,
   tetangga,
+  type TataLetakGraf,
 } from '../src/graph-layout';
 import { buatFramework } from './factories';
 
@@ -951,5 +952,154 @@ describe('keadaanPeta: sorot, redup, mode jalur', () => {
     const k = keadaanPeta(layout, null, null, true);
     expect(k.sembunyi.size).toBe(0);
     expect(k.edgeSembunyi.size).toBe(0);
+  });
+});
+
+describe('toggle satu_tema: filter sebelum pewarnaan lajur', () => {
+  // GraphSvg memfilter edge SEBELUM hitungLayout, supaya pewarnaan
+  // lajur berjalan pada edge yang terlihat saja dan lajur tersisa
+  // menyebar ulang ke tengah gutter (bukan lubang kosong di posisi
+  // lajur lama). Default toggle adalah sembunyi.
+  const edgesTampil = graph.edges.filter((e) => e.tipe !== 'satu_tema');
+  const layoutSembunyi = hitungLayout(graph.nodes, edgesTampil);
+
+  /** Koordinat x unik segmen vertikal dalam ±5,01px dari pusat gutter. */
+  function lajurGutter(l: TataLetakGraf, pusat: number): number[] {
+    const xs = new Set<number>();
+    for (const e of l.edges) {
+      const t = uraianTitik(e.d);
+      for (let i = 1; i < t.length; i++) {
+        const a = t[i - 1];
+        const b = t[i];
+        if (a.x === b.x && Math.abs(a.x - pusat) <= 5.01) xs.add(a.x);
+      }
+    }
+    return [...xs].sort((a, b) => a - b);
+  }
+
+  it('graph.json punya 15 edge satu_tema; tersaring tinggal 20 edge', () => {
+    expect(graph.edges.filter((e) => e.tipe === 'satu_tema')).toHaveLength(
+      15,
+    );
+    expect(layoutSembunyi.edges).toHaveLength(20);
+    expect(
+      layoutSembunyi.edges.filter((e) => e.tipe === 'satu_tema'),
+    ).toHaveLength(0);
+    expect(layoutSembunyi.nodes).toHaveLength(22);
+  });
+
+  it('lajur A-B 4 → 3 dan menyebar ulang ke tengah gutter', () => {
+    const tampil = lajurGutter(layout, 168);
+    const sembunyi = lajurGutter(layoutSembunyi, 168);
+    expect(tampil).toHaveLength(4);
+    expect(sembunyi).toHaveLength(3);
+    // Jarak antar lajur tetap ≥3,3px di kedua state (langkah 10/3).
+    for (const xs of [tampil, sembunyi]) {
+      for (let i = 1; i < xs.length; i++) {
+        expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(3.3);
+      }
+    }
+    // Menyebar ulang, bukan lubang kosong: lajur lama di tepi (163/173)
+    // hilang, lajur baru berpusat di 168 (rata-rata 168, simpangan ≤3,34).
+    expect(sembunyi).not.toContain(163);
+    expect(sembunyi).not.toContain(173);
+    const rata = sembunyi.reduce((a, b) => a + b, 0) / sembunyi.length;
+    expect(rata).toBeCloseTo(168, 1);
+    for (const x of sembunyi) {
+      expect(Math.abs(x - 168)).toBeLessThanOrEqual(3.34);
+    }
+  });
+
+  it('gutter lain ikut berkurang: B-C 3→2, D-E 2→1, F-G 2→1; E-F tetap 3, C-D tetap 1', () => {
+    expect(lajurGutter(layout, 320)).toHaveLength(3);
+    expect(lajurGutter(layoutSembunyi, 320)).toHaveLength(2);
+    expect(lajurGutter(layout, 624)).toHaveLength(2);
+    expect(lajurGutter(layoutSembunyi, 624)).toHaveLength(1);
+    expect(lajurGutter(layout, 928)).toHaveLength(2);
+    expect(lajurGutter(layoutSembunyi, 928)).toHaveLength(1);
+    expect(lajurGutter(layout, 776)).toHaveLength(3);
+    expect(lajurGutter(layoutSembunyi, 776)).toHaveLength(3);
+    expect(lajurGutter(layout, 472)).toHaveLength(1);
+    expect(lajurGutter(layoutSembunyi, 472)).toHaveLength(1);
+  });
+
+  it('property test berlaku pada layout tersaring: tidak ada titik edge di dalam node bukan ujung', () => {
+    for (const e of layoutSembunyi.edges) {
+      const ujung = new Set([e.dari, e.ke]);
+      const pelanggaran: string[] = [];
+      for (const p of samplingPath(e.d)) {
+        for (const n of layoutSembunyi.nodes) {
+          if (ujung.has(n.id)) continue;
+          const diDalam =
+            p.x > n.x + 1 &&
+            p.x < n.x + n.lebar - 1 &&
+            p.y > n.y + 1 &&
+            p.y < n.y + n.tinggi - 1;
+          if (diDalam) {
+            pelanggaran.push(
+              `(${p.x.toFixed(1)}, ${p.y.toFixed(1)}) di dalam ${n.id}`,
+            );
+          }
+        }
+      }
+      expect(
+        pelanggaran.slice(0, 5),
+        `edge ${e.dari}→${e.ke} (${e.tipe}): ${pelanggaran.length} titik melanggar`,
+      ).toEqual([]);
+    }
+  });
+
+  it('zona legenda dan progres tetap bebas edge pada layout tersaring', () => {
+    for (const e of layoutSembunyi.edges) {
+      for (const p of samplingPath(e.d)) {
+        const diLegenda =
+          p.x > BATAS_LEGENDA.x0 &&
+          p.x < BATAS_LEGENDA.x1 &&
+          p.y > BATAS_LEGENDA.y0 &&
+          p.y < BATAS_LEGENDA.y1;
+        const diProgres =
+          p.x > BATAS_PROGRES.x0 &&
+          p.x < BATAS_PROGRES.x1 &&
+          p.y > BATAS_PROGRES.y0 &&
+          p.y < BATAS_PROGRES.y1;
+        expect(diLegenda || diProgres).toBe(false);
+      }
+    }
+  });
+
+  it('hover memakai edge terlihat saja: pestel tidak menyorot ansoff saat sembunyi', () => {
+    // Pestel punya 3 edge: prasyarat ke porter-5f + satu_tema ke
+    // porter-5f dan ansoff. Saat sembunyi, ansoff tidak terhubung
+    // garis yang terlihat, jadi tidak boleh tersorot.
+    const sembunyi = keadaanPeta(layoutSembunyi, 'pestel', null, false);
+    expect(sembunyi.sorot).toEqual(new Set(['pestel', 'porter-5f']));
+    expect(sembunyi.edgeTerkait.size).toBe(1);
+    const tampil = keadaanPeta(layout, 'pestel', null, false);
+    expect(tampil.sorot).toEqual(
+      new Set(['pestel', 'porter-5f', 'ansoff']),
+    );
+    expect(tampil.edgeTerkait.size).toBe(3);
+  });
+
+  it('tetangga vrio sama di kedua state (prasyarat paralel tetap ada)', () => {
+    expect(tetangga(layoutSembunyi.edges, 'vrio')).toEqual(
+      new Set(['value-chain', 'core-competencies']),
+    );
+    expect(tetangga(layout.edges, 'vrio')).toEqual(
+      new Set(['value-chain', 'core-competencies']),
+    );
+  });
+
+  it('Lihat jalur tidak terpengaruh filter (closure prasyarat saja)', () => {
+    expect(jalurPrasyarat(edgesTampil, 'core-competencies')).toEqual(
+      jalurPrasyarat(graph.edges, 'core-competencies'),
+    );
+    const k = keadaanPeta(layoutSembunyi, null, 'core-competencies', true);
+    // Node yang sama disembunyikan (19); edge yang disembunyikan 18
+    // (20 − 2 prasyarat antar node closure), bukan 33.
+    expect(k.sembunyi.size).toBe(19);
+    expect(k.edgeSembunyi.size).toBe(18);
+    expect(k.sembunyi.has('vrio')).toBe(false);
+    expect(k.sembunyi.has('value-chain')).toBe(false);
   });
 });

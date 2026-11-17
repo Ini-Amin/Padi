@@ -4,14 +4,16 @@
  *
  * Pembagian tugas antar library (dokumen 04 §5):
  * - AutoAnimate: transisi layout otomatis (daftar berubah isi/urutan).
- * - SplitType: judul layar utama, huruf muncul berurutan. CSS yang
- *   menggerakkan (`.judul-animasi .huruf` di style.css); SplitType hanya
- *   memecah judul jadi huruf.
+ * - Pemecah huruf vanilla (bukan SplitType, demi ~11 kB bundle — JS
+ *   −10,50 kB bersih sesudah tambahan toggle): judul layar utama,
+ *   (`.judul-animasi .huruf` di style.css); kode di sini hanya memecah
+ *   judul jadi huruf dan mengembalikan isi asli saat dibersihkan.
  * - GSAP: sekuens terorkestrasi (reveal hasil matching, transisi langkah
  *   onboarding). Dipakai langsung di komponen yang memerlukannya.
+ *   (GSAP core-only tidak bisa: kedua pemakaian menganimasikan properti
+ *   CSS — opacity/y — yang butuh CSSPlugin.)
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import SplitType from 'split-type';
 
 /** True bila animasi diizinkan (user tidak meminta reduced motion). */
 export function useGerakanAktif(): boolean {
@@ -29,28 +31,51 @@ export function useGerakanAktif(): boolean {
 }
 
 /**
- * Animasi judul: pecah h1 jadi huruf (SplitType), lalu muncul berurutan
+ * Animasi judul: pecah h1 jadi huruf (span `.huruf` per huruf, spasi
+ * tetap node teks supaya jarak kata terjaga), lalu muncul berurutan
  * lewat transisi CSS (`.judul-animasi .huruf`, `.jalan` di style.css).
  * Mengembalikan callback ref: pasang di h1 (`ref={refJudul}` +
  * `className="judul-animasi"`). Tidak melakukan apa pun bila gerakan
- * tidak aktif: judul tampil sebagai teks biasa.
+ * tidak aktif: judul tampil sebagai teks biasa. Isi asli dikembalikan
+ * saat ref dilepas / dipanggil ulang (menggantikan `revert()` SplitType).
  */
 export function useJudulAnimasi(): (el: HTMLElement | null) => void {
   const gerakanAktif = useGerakanAktif();
-  const splitRef = useRef<SplitType | null>(null);
+  const asliRef = useRef<{ el: HTMLElement; html: string } | null>(null);
   return useCallback(
     (el: HTMLElement | null) => {
-      if (splitRef.current) {
-        splitRef.current.revert();
-        splitRef.current = null;
+      if (asliRef.current) {
+        const { el: elLama, html } = asliRef.current;
+        elLama.innerHTML = html;
+        elLama.classList.remove('jalan');
+        asliRef.current = null;
       }
       if (el === null || !gerakanAktif) return;
-      const split = new SplitType(el, { types: 'chars', charClass: 'huruf' });
-      splitRef.current = split;
-      el.querySelectorAll('.huruf').forEach((huruf, i) => {
-        (huruf as HTMLElement).style.transitionDelay =
-          `${Math.min(i * 0.02, 0.4).toFixed(2)}s`;
-      });
+      const teksNode = [...el.childNodes].filter(
+        (n): n is Text => n.nodeType === Node.TEXT_NODE,
+      );
+      if (teksNode.length === 0) return;
+      asliRef.current = { el, html: el.innerHTML };
+      // Indeks delay menghitung huruf saja (bukan spasi), sama seperti
+      // pemakaian SplitType sebelumnya (querySelectorAll('.huruf')).
+      let i = 0;
+      for (const node of teksNode) {
+        const fragmen = document.createDocumentFragment();
+        for (const huruf of node.textContent ?? '') {
+          if (huruf === ' ') {
+            fragmen.append(' ');
+            continue;
+          }
+          const span = document.createElement('span');
+          span.className = 'huruf';
+          span.textContent = huruf;
+          span.style.transitionDelay =
+            `${Math.min(i * 0.02, 0.4).toFixed(2)}s`;
+          i++;
+          fragmen.append(span);
+        }
+        node.replaceWith(fragmen);
+      }
       // Tambahkan `.jalan` di frame berikutnya agar transisi berjalan.
       requestAnimationFrame(() => {
         requestAnimationFrame(() => el.classList.add('jalan'));

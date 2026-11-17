@@ -120,4 +120,52 @@ describe('store: persist manual', () => {
     expect(s.onboarding.selesai).toBe(true);
     expect(s.onboarding.masalahId).toBeNull();
   });
+
+  it('tampilkanSatuTema default false (sembunyi) saat localStorage kosong', async () => {
+    const { usePadiStore } = await muatStore();
+    expect(usePadiStore.getState().tampilkanSatuTema).toBe(false);
+  });
+
+  it('menghidrasi tampilkanSatuTema true dari instalasi lama', async () => {
+    const { usePadiStore } = await muatStore({
+      'padi-store': JSON.stringify({
+        state: {
+          masalahAktifId: null,
+          onboarding: profilOnboardingAwal(),
+          tampilkanSatuTema: true,
+        },
+        version: 0,
+      }),
+    });
+    expect(usePadiStore.getState().tampilkanSatuTema).toBe(true);
+  });
+
+  it('instalasi lama tanpa kunci tampilkanSatuTema memakai default false', async () => {
+    const { usePadiStore } = await muatStore({
+      'padi-store': JSON.stringify({
+        state: { masalahAktifId: null, onboarding: profilOnboardingAwal() },
+        version: 0,
+      }),
+    });
+    expect(usePadiStore.getState().tampilkanSatuTema).toBe(false);
+  });
+
+  it('menulis balik tampilkanSatuTema tiap perubahan', async () => {
+    const { usePadiStore, ls } = await muatStore();
+    usePadiStore.getState().setTampilkanSatuTema(true);
+    const tersimpan = JSON.parse(ls.getItem('padi-store') ?? '{}') as {
+      state: Record<string, unknown>;
+      version: number;
+    };
+    expect(tersimpan.version).toBe(0);
+    expect(tersimpan.state.tampilkanSatuTema).toBe(true);
+    // Nilai bukan boolean diabaikan (jatuh ke default false).
+    const { usePadiStore: toko2 } = await muatStore({
+      'padi-store': JSON.stringify({
+        state: { tampilkanSatuTema: 'ya' },
+        version: 0,
+      }),
+    });
+    expect(toko2.getState().tampilkanSatuTema).toBe(false);
+  });
 });
