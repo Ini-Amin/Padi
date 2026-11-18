@@ -261,11 +261,13 @@ describe('Session: bar progres di bawah timer dengan tick tahap', () => {
   }
 
   it('sesi penerapan: progressbar + 3 tick di batas tahap', async () => {
-    const html = await render(buatSesi({ jenis: 'penerapan' }));
+    const html = await render(buatSesi({ jenis: 'penerapan', durasi_menit: 0 }));
     expect(html).toContain('role="progressbar"');
     expect(html).toContain('aria-label="Progres sesi: 0%"');
     const tick = html.match(/bar-progres-tick/g) ?? [];
     expect(tick.length).toBe(3);
+    // Tick adalah tombol (klik membuka tahap panduan yang dimulai di sana).
+    expect(html).toContain('<button type="button" class="bar-progres-tick"');
     // Bar berada di bawah timer, sebelum keterangan target.
     expect(html.indexOf('class="timer"')).toBeLessThan(
       html.indexOf('class="bar-progres-sesi"'),

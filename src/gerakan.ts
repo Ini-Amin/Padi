@@ -4,10 +4,12 @@
  *
  * Pembagian tugas antar library (dokumen 04 §5):
  * - AutoAnimate: transisi layout otomatis (daftar berubah isi/urutan).
- * - GSAP: sekuens terorkestrasi (reveal hasil matching, transisi langkah
- *   onboarding). Dipakai langsung di komponen yang memerlukannya.
- *   (GSAP core-only tidak bisa: kedua pemakaian menganimasikan properti
- *   CSS — opacity/y — yang butuh CSSPlugin.)
+ * - Animasi mount (reveal Ranking, transisi langkah Onboarding): CSS
+ *   murni (kelas .baris-ranking-masuk / .langkah-masuk, dipasang hanya
+ *   bila hook ini true). GSAP DIHAPUS 18 Nov 2026: kedua pemakaiannya
+ *   (fade + naik, stagger) setara di CSS dan GSAP menelan ~70 kB bundle.
+ *   (Keputusan lama "GSAP core-only tidak bisa" sudah tidak relevan —
+ *   yang dihapus adalah seluruh GSAP, bukan subsetnya.)
  * - Pemecah huruf judul (dulu SplitType, lalu vanilla) DIHAPUS 18 Nov
  *   2026 (proposal 6 studi contoh): reveal huruf-per-huruf adalah
  *   koreografi muat-halaman yang tidak melayani umpan balik.

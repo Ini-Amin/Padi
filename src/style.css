@@ -653,12 +653,80 @@ pre.isi-artefak {
   border-radius: inherit;
 }
 
+/* Tick adalah <button>: klik membuka tahap panduan yang dimulai di
+ * batas itu. Garis yang terlihat tetap 2px; area klik diperbesar
+ * lewat ::after (24×28px — tick berjarak 106px+, tidak tumpang tindih). */
 .bar-progres-tick {
   position: absolute;
   top: -2px;
   width: 2px;
   height: 8px;
   background: var(--border-kuat);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.bar-progres-tick::after {
+  content: '';
+  position: absolute;
+  inset: -10px -11px;
+}
+
+/* --- Panduan sesi interaktif: accordion 4 tahap sinkron timer --- */
+
+/* Satu tahap: kartu kecil di dalam kartu panduan. Tahap berjalan
+ * berborder tinta 2px (bahasa kartu-utama) + lencana "Tahap ini". */
+.tahap-panduan {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 12px 0;
+  padding: 12px 16px;
+  scroll-margin-top: 80px;
+}
+
+.tahap-panduan.saat-ini {
+  border: 2px solid var(--text);
+}
+
+.tahap-panduan summary {
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Judul tahap (bukan h3: heading di dalam <summary> tidak valid HTML). */
+.judul-tahap {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Checklist langkah prosedur: tanpa bullet, pemisah garis rambut. */
+.checklist-prosedur {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+
+.checklist-prosedur li {
+  border-top: 1px solid var(--border);
+}
+
+.checklist-prosedur li:first-child {
+  border-top: none;
+}
+
+/* Catatan pertama kali di Recall: tombol "Prosedur" sebaris dengan teks
+ * (padding tombol-teks direset agar tidak meninggikan baris). */
+.catatan-pertama {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.catatan-pertama .tombol-teks {
+  padding: 0;
 }
 
 /* --- Detail framework: grup visual + jump-nav --- */
@@ -979,8 +1047,41 @@ html {
   }
 }
 
-/* Hormati permintaan tanpa gerakan: tidak ada animasi CSS dekoratif
- * yang tersisa (reveal huruf dihapus bersama pemecah hurufnya); animasi
- * JS (GSAP/AutoAnimate) dimatikan hook useGerakanAktif. Transisi umpan
- * balik (hover/fokus, redup peta) dipertahankan — semuanya instan atau
- * di bawah 300ms dan membawa informasi status. */
+/* --- Animasi masuk (CSS, tanpa GSAP sejak 18 Nov 2026) ---
+ * Dua animasi mount: reveal baris Ranking (stagger 80ms per baris) dan
+ * transisi langkah Onboarding (fade + naik 8px). Kelas hanya dipasang
+ * bila useGerakanAktif true; media query di bawah jadi jaring pengaman. */
+@keyframes masuk-baris {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.baris-ranking-masuk {
+  animation: masuk-baris 0.35s ease-out both;
+  animation-delay: var(--tunda, 0ms);
+}
+
+@keyframes masuk-langkah {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.langkah-masuk {
+  animation: masuk-langkah 0.3s ease-out both;
+}
+
+/* Hormati permintaan tanpa gerakan: dua animasi masuk di atas dimatikan
+ * (kelasnya juga tidak dipasang bila hook useGerakanAktif false — ini
+ * jaring pengaman). Transisi umpan balik (hover/fokus, redup peta)
+ * dipertahankan — semuanya instan atau di bawah 300ms dan membawa
+ * informasi status. */
+@media (prefers-reduced-motion: reduce) {
+  .baris-ranking-masuk,
+  .langkah-masuk {
+    animation: none;
+  }
+}

@@ -4,9 +4,9 @@
  * Tombol "Ganti" menampilkan alternatif peringkat 4–6; "Tidak cocok"
  * mencatat umpan balik sebagai telemetri (tanpa penalti).
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
-import gsap from 'gsap';
 import type { Framework, Masalah } from '../domain';
 import { LABEL_KRITERIA } from '../domain';
 import {
@@ -26,7 +26,7 @@ interface Props {
   frameworks: Framework[];
   dipakaiIds: ReadonlySet<string>;
   /**
-   * Reveal terorkestrasi (GSAP): 3 baris hasil matching muncul berurutan
+   * Reveal terorkestrasi (CSS): 3 baris hasil matching muncul berurutan
    * saat pertama tampil. Hanya dipakai langkah 2 onboarding, momen
    * penemuan hasil matching; di Beranda/Detail ranking tampil langsung.
    */
@@ -43,32 +43,19 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
   const [refDaftar] = useAutoAnimate({
     duration: gerakanAktif ? 250 : 0,
   });
-  const refKartu = useRef<HTMLDivElement | null>(null);
-
-  // Reveal hasil matching: baris muncul satu per satu (GSAP, sekali saja
-  // saat mount). Tidak berjalan bila gerakan tidak aktif atau tidak ada baris.
+  // Reveal hasil matching: baris muncul satu per satu (animasi CSS,
+  // kelas .baris-ranking-masuk + delay per indeks). Sekali saja saat
+  // mount pertama — "Ganti" menukar isi tanpa mengulang reveal.
+  // Kelas dicabut 700ms setelah mount (stagger terlama 240ms + durasi
+  // 350ms + margin); mencabutnya tidak mengubah tampilan karena state
+  // akhir animasi sama dengan state natural baris.
+  const [revealSelesai, setRevealSelesai] = useState(false);
   useEffect(() => {
-    const kartu = refKartu.current;
     if (!animasiMasuk || !gerakanAktif) return;
-    if (kartu === null || kartu.querySelector('.baris-ranking') === null) {
-      return;
-    }
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        '.baris-ranking',
-        { opacity: 0, y: 10 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.35,
-          stagger: 0.08,
-          ease: 'power1.out',
-          clearProps: 'all',
-        },
-      );
-    }, kartu);
-    return () => ctx.revert();
+    const t = setTimeout(() => setRevealSelesai(true), 700);
+    return () => clearTimeout(t);
   }, [animasiMasuk, gerakanAktif]);
+  const animasiBaris = animasiMasuk && gerakanAktif && !revealSelesai;
 
   const hasil = useMemo(
     () => rankingUntukMasalah(masalah, frameworks, dipakaiIds),
@@ -138,7 +125,7 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
   const daftar = menampilkanAlternatif ? alternatif : hasil.peringkat;
 
   return (
-    <div className="kartu" ref={refKartu}>
+    <div className="kartu">
       <h2>Framework yang cocok</h2>
       <p className="muted kecil">
         Kriteriamu:{' '}
@@ -153,6 +140,8 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
             utama={!menampilkanAlternatif && i === 0}
             memulai={memulai === h.framework.id}
             onPakai={() => void pakai(h.framework.id)}
+            indeks={i}
+            masuk={animasiBaris}
           />
         ))}
         {!menampilkanAlternatif && hasil.eksplorasi && (
@@ -163,6 +152,8 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
             eksplorasi
             memulai={memulai === hasil.eksplorasi.framework.id}
             onPakai={() => void pakai(hasil.eksplorasi!.framework.id)}
+            indeks={daftar.length}
+            masuk={animasiBaris}
           />
         )}
       </div>
@@ -221,6 +212,8 @@ function BarisRanking({
   eksplorasi,
   memulai,
   onPakai,
+  indeks,
+  masuk,
 }: {
   hasil: HasilMatching;
   peringkat: number | null;
@@ -228,12 +221,19 @@ function BarisRanking({
   eksplorasi?: boolean;
   memulai: boolean;
   onPakai: () => void;
+  /** Posisi baris untuk delay stagger (80ms per baris). */
+  indeks: number;
+  /** Reveal masuk aktif (hanya mount pertama onboarding). */
+  masuk: boolean;
 }): React.JSX.Element {
   // Barisnya sendiri bukan kontrol: satu-satunya aksi adalah tombol "Pakai"
   // (native button, bisa Enter dan Space). Klik-baris sengaja tidak ada:
   // memulai sesi 45 menit tidak boleh terjadi karena klik yang tidak sengaja.
   return (
-    <div className="baris-ranking">
+    <div
+      className={`baris-ranking${masuk ? ' baris-ranking-masuk' : ''}`}
+      style={masuk ? ({ '--tunda': `${indeks * 80}ms` } as CSSProperties) : undefined}
+    >
       <span className="peringkat">{peringkat ?? ''}</span>
       <div className="fleksibel-1">
         <span className="nama-framework">{hasil.framework.nama}</span>

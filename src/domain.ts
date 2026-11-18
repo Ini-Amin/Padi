@@ -161,6 +161,15 @@ export interface Sesi {
   dimulai_pada_ms: number | null;
   /** Durasi target timer dalam menit (45 penerapan, 12 re-use). */
   durasi_target_menit: number;
+  /**
+   * Langkah prosedur yang dicentang di panduan sesi — TEKS langkah
+   * persis, BUKAN indeks: isi framework bisa berubah saat sinkronisasi
+   * ulang dari graph.json, dan indeks akan menunjuk langkah yang salah
+   * secara diam-diam; kunci teks yang sudah tidak ada diabaikan saat
+   * muat (checklist jadi tidak tercentang, bukan salah centang).
+   * Field tanpa indeks: tidak butuh bump versi Dexie.
+   */
+  checklist_prosedur?: string[];
 }
 
 export interface Artefak {

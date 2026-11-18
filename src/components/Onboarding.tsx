@@ -9,9 +9,8 @@
  * "Lewati" menandai onboarding selesai tanpa masalah (Beranda kosong).
  * Mode `ulang` (dari Progres): menyatakan masalah baru, tanpa gate.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import gsap from 'gsap';
 import { db, terapkanHasilOnboarding } from '../db';
 import { usePadiStore } from '../store';
 import { hariIni } from '../dates';
@@ -59,29 +58,14 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
   const [masalahBaru, setMasalahBaru] = useState<Masalah | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
   const gerakanAktif = useGerakanAktif();
-  const refLangkah = useRef<HTMLDivElement | null>(null);
-
-  // Transisi antar langkah (GSAP): layar masuk dengan fade + naik sedikit.
-  // Berjalan saat mount dan setiap pergantian langkah; mati bila gerakan
-  // tidak aktif.
-  useEffect(() => {
-    const el = refLangkah.current;
-    if (el === null || !gerakanAktif) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        el,
-        { opacity: 0, y: 8 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.3,
-          ease: 'power1.out',
-          clearProps: 'all',
-        },
-      );
-    });
-    return () => ctx.revert();
-  }, [langkah, gerakanAktif]);
+  // Transisi antar langkah: kelas .langkah-masuk (animasi CSS, fade +
+  // naik 8px, 0.3 detik). Kedua cabang langkah memakai key={langkah}
+  // agar div me-mount ulang tiap pergantian langkah — tanpa key, React
+  // memakai ulang node div yang sama dan animasi CSS tidak jalan lagi
+  // (beda dengan GSAP yang men-trigger ulang lewat effect). Animasi
+  // jalan saat mount dan setiap pergantian langkah; mati bila gerakan
+  // tidak aktif. (GSAP dihapus 18 Nov 2026: satu-satunya pemakaian
+  // adalah transisi ini + stagger Ranking — keduanya setara di CSS.)
 
   const toggleKriteria = (k: KriteriaMasalah): void => {
     setKriteria((sebelum) => {
@@ -135,7 +119,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
 
   if (langkah === 1 && masalahBaru !== null) {
     return (
-      <div ref={refLangkah}>
+      <div key={langkah} className={gerakanAktif ? 'langkah-masuk' : undefined}>
         <p className="indikator-langkah">Langkah 2 dari 2: pilih framework</p>
         <h1>3 framework yang cocok untuk masalahmu</h1>
         <p>
@@ -157,7 +141,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
   }
 
   return (
-    <div ref={refLangkah}>
+    <div key={langkah} className={gerakanAktif ? 'langkah-masuk' : undefined}>
       <p className="indikator-langkah">Langkah 1 dari 2: masalahmu</p>
       <h1>
         Masalah apa yang sedang kamu hadapi?

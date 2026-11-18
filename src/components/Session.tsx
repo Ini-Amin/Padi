@@ -16,7 +16,11 @@ import {
   labelJenisSesi,
   perluKonfirmasiDini,
   perluPilihMasalah,
+  tahapDariElapsed,
+  tahapUntukTick,
 } from '../sesi';
+import { pecahLangkahProsedur } from '../prosedur';
+import { useGerakanAktif } from '../gerakan';
 import { totalXp } from '../gamification';
 import { navigasi } from '../App';
 
@@ -28,6 +32,14 @@ const JENIS_ARTEFAK: Array<{ nilai: Artefak['jenis']; label: string }> = [
 ];
 
 type Tahap = 'pilih-masalah' | 'sesi' | 'nilai' | 'selesai';
+
+/** Empat tahap panduan sesi penerapan (dokumen 03 §7). */
+const TAHAP_PANDUAN: Array<{ nama: string; rentang: string }> = [
+  { nama: 'Recall', rentang: '0–5′' },
+  { nama: 'Prosedur', rentang: '5–20′' },
+  { nama: 'Penerapan', rentang: '20–35′' },
+  { nama: 'Artefak', rentang: '35–45′' },
+];
 
 export function Session({ id, reuseId }: { id: string; reuseId: string | null }): React.JSX.Element {
   const sesi = useLiveQuery(() => db.sesi.get(id), [id]);
@@ -56,11 +68,35 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
     () => db.xp_ledger.where('sesi_id').equals(id).toArray(),
     [id],
   );
+  // Jumlah sesi SELESAI untuk framework ini (untuk catatan pertama kali
+  // di tahap Recall). Sengaja memakai sesi selesai, bukan pemakaian:
+  // pemakaian hanya tercatat bila skor ≥ 1, padahal sesi selesai skor 0
+  // (dengan artefak atau ≥30′) tetap berarti "pernah memakai".
+  const sesiSelesaiFramework = useLiveQuery(
+    () =>
+      sesi
+        ? db.sesi
+            .where('framework_id')
+            .equals(sesi.framework_id)
+            .filter((s) => s.selesai)
+            .count()
+        : 0,
+    [sesi?.framework_id],
+  );
 
   const [tahap, setTahap] = useState<Tahap>('sesi');
-  const [elapsedDetik, setElapsedDetik] = useState<number | null>(null);
+  // Inisialisasi malas dari sesi bila sudah tersedia di render pertama
+  // (di browser useLiveQuery selalu mengembalikan undefined dulu, jadi
+  // nilainya null dan efek init di bawah yang mengisi — perilaku sama;
+  // inisialisasi ini terutama membuat render server-side pada tes
+  // melihat elapsed/checklist yang benar).
+  const [elapsedDetik, setElapsedDetik] = useState<number | null>(() =>
+    sesi ? sesi.durasi_menit * 60 : null,
+  );
   const [berjalan, setBerjalan] = useState(false);
-  const [catatan, setCatatan] = useState<string | null>(null);
+  const [catatan, setCatatan] = useState<string | null>(() =>
+    sesi ? sesi.catatan : null,
+  );
   const [skor, setSkor] = useState<Skor | null>(null);
   const [adaArtefak, setAdaArtefak] = useState(false);
   const [judulArtefak, setJudulArtefak] = useState('');
@@ -76,9 +112,41 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
   const [konfirmasiDini, setKonfirmasiDini] = useState(false);
   const [statusSimpan, setStatusSimpan] = useState<'idle' | 'menyimpan' | 'tersimpan'>('idle');
   const [waktuSimpan, setWaktuSimpan] = useState<string | null>(null);
+  // Panduan interaktif (penerapan saja): override manual accordion +
+  // langkah prosedur yang dicentang (kunci = teks langkah).
+  // Override ditandai tahap saat dibuat: bila timer pindah tahap, tanda
+  // tidak cocok lagi dan accordion kembali mengikuti timer — jadi tidak
+  // butuh efek sinkronisasi, dan pilihan manual bertahan dalam satu
+  // periode tahap.
+  const [tahapManual, setTahapManual] = useState<{
+    tahap: number;
+    buka: number | null;
+  } | null>(null);
+  const [checklist, setChecklist] = useState<Set<string> | null>(() =>
+    sesi ? new Set(sesi.checklist_prosedur ?? []) : null,
+  );
+  const gerakanAktif = useGerakanAktif();
 
   const elapsedRef = useRef(0);
   const catatanRef = useRef('');
+  const refPanduan = useRef<HTMLDetailsElement | null>(null);
+
+  // Tahap panduan dari waktu berjalan — dihitung di sini (bukan setelah
+  // early return) agar turunan accordion bisa memakainya.
+  const tahapSaatIni =
+    sesi?.jenis === 'penerapan'
+      ? tahapDariElapsed(
+          elapsedDetik ?? 0,
+          (sesi.durasi_target_menit ?? 45) * 60,
+        )
+      : 0;
+  // Tahap yang terbuka: override manual bila dibuat dalam periode tahap
+  // ini, kalau tidak ikuti timer (termasuk saat mount dan saat pindah
+  // tahap — inilah "sinkronisasi ulang" tanpa efek).
+  const tahapTerbuka =
+    tahapManual !== null && tahapManual.tahap === tahapSaatIni
+      ? tahapManual.buka
+      : tahapSaatIni;
 
   useEffect(() => {
     if (!sesi) return;
@@ -93,7 +161,10 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
       catatanRef.current = sesi.catatan;
       setCatatan(sesi.catatan);
     }
-  }, [sesi, elapsedDetik, catatan]);
+    if (checklist === null) {
+      setChecklist(new Set(sesi.checklist_prosedur ?? []));
+    }
+  }, [sesi, elapsedDetik, catatan, checklist]);
 
   useEffect(() => {
     if (!berjalan) return;
@@ -186,9 +257,42 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
   const detik = sisa % 60;
   const waktuHabis = (elapsedDetik ?? 0) >= targetDetik;
 
+  // Langkah prosedur (penerapan saja; null = <2 langkah → paragraf).
+  const langkahProsedur =
+    sesi.jenis === 'penerapan'
+      ? pecahLangkahProsedur(framework.lapis_b_prosedur)
+      : null;
+
   const jeda = async (): Promise<void> => {
     setBerjalan(false);
     await simpanCatatan();
+  };
+
+  /** Buka satu tahap panduan (dari tick bar progres / tombol lompat). */
+  const bukaTahap = (i: number): void => {
+    // Bila seluruh panduan ditutup user, buka dulu wadahnya.
+    if (refPanduan.current && !refPanduan.current.open) {
+      refPanduan.current.open = true;
+    }
+    setTahapManual({ tahap: tahapSaatIni, buka: i });
+    // Scroll setelah expand ter-render (2 rAF: commit React lalu layout).
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById(`tahap-panduan-${i}`)?.scrollIntoView({
+          behavior: gerakanAktif ? 'smooth' : 'auto',
+          block: 'nearest',
+        });
+      });
+    });
+  };
+
+  /** Centang/batalkan satu langkah prosedur; tersimpan di rekaman sesi. */
+  const toggleLangkahProsedur = async (langkah: string): Promise<void> => {
+    const berikut = new Set(checklist ?? []);
+    if (berikut.has(langkah)) berikut.delete(langkah);
+    else berikut.add(langkah);
+    setChecklist(berikut);
+    await db.sesi.update(id, { checklist_prosedur: [...berikut] });
   };
 
   const pilihMasalahReuse = async (masalahId: string): Promise<void> => {
@@ -502,10 +606,13 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
         <div className="bar-progres-isi" style={{ width: `${persenSesi}%` }} />
         {sesi.jenis === 'penerapan' &&
           [5, 20, 35].map((m) => (
-            <span
+            <button
               key={m}
+              type="button"
               className="bar-progres-tick"
               style={{ left: `${((m * 60) / targetDetik) * 100}%` }}
+              aria-label={`Buka tahap ${TAHAP_PANDUAN[tahapUntukTick(m)].nama} (mulai menit ke-${m})`}
+              onClick={() => bukaTahap(tahapUntukTick(m))}
             />
           ))}
       </div>
@@ -573,25 +680,104 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
       )}
 
       {sesi.jenis === 'penerapan' && (
-        <details className="kartu" open>
+        <details className="kartu" open ref={refPanduan}>
           <summary>
             <strong>Panduan 4 tahap (opsional)</strong>
+            <span className="muted kecil">
+              {' '}
+              — Tahap {tahapSaatIni + 1}: {TAHAP_PANDUAN[tahapSaatIni].nama}
+            </span>
           </summary>
-          <h3>Recall (0–5&prime;)</h3>
-          <p>
-            Tutup catatan. Apa yang kamu ingat dari {framework.nama}?
+          {/* Pengumuman pergantian tahap (hanya berubah saat tahap
+            berubah; tidak pernah mencuri fokus). */}
+          <p className="sr-only" aria-live="polite">
+            Tahap {tahapSaatIni + 1} dari 4: {TAHAP_PANDUAN[tahapSaatIni].nama}
           </p>
-          <h3>Prosedur (5–20&prime;)</h3>
-          <p>{framework.lapis_b_prosedur}</p>
-          <h3>Penerapan (20–35&prime;)</h3>
-          <p>
-            Terapkan ke masalahmu. {framework.lapis_a_pemetaan}
-          </p>
-          <h3>Artefak (35–45&prime;)</h3>
-          <p>
-            Tulis hasil penerapanmu dan catat kapan framework ini salah alat.{' '}
-            {framework.lapis_c_kesalahan}
-          </p>
+          {TAHAP_PANDUAN.map((t, i) => (
+            <details
+              key={t.nama}
+              id={`tahap-panduan-${i}`}
+              className={`tahap-panduan${tahapSaatIni === i ? ' saat-ini' : ''}`}
+              open={tahapTerbuka === i}
+              onToggle={(e) => {
+                // `toggle` juga menyala saat React mengubah `open`
+                // (sinkronisasi timer) — abaikan bila DOM sudah sesuai
+                // turunan, catat override hanya untuk klik user.
+                const terbuka = e.currentTarget.open;
+                if (terbuka === (tahapTerbuka === i)) return;
+                setTahapManual({
+                  tahap: tahapSaatIni,
+                  buka: terbuka ? i : null,
+                });
+              }}
+            >
+              <summary>
+                <span className="judul-tahap">
+                  {t.nama} ({t.rentang})
+                </span>
+                {tahapSaatIni === i && (
+                  <span className="lencana">Tahap ini</span>
+                )}
+              </summary>
+              {i === 0 && (
+                <>
+                  <p>
+                    Tutup catatan. Apa yang kamu ingat dari {framework.nama}?
+                  </p>
+                  {sesiSelesaiFramework === 0 && (
+                    <p className="catatan-pertama">
+                      Pertama kali memakai framework ini — belum ada yang
+                      perlu di-recall; mulai dari{' '}
+                      <button
+                        type="button"
+                        className="tombol-teks"
+                        onClick={() => bukaTahap(1)}
+                      >
+                        Prosedur
+                      </button>
+                      .
+                    </p>
+                  )}
+                </>
+              )}
+              {i === 1 &&
+                (langkahProsedur !== null ? (
+                  <ul className="checklist-prosedur">
+                    {langkahProsedur.map((langkah, j) => (
+                      <li key={`${j}-${langkah}`}>
+                        <label className="cek">
+                          <input
+                            type="checkbox"
+                            checked={checklist?.has(langkah) ?? false}
+                            onChange={() => void toggleLangkahProsedur(langkah)}
+                          />
+                          <span>
+                            {langkah}
+                            <span className="sr-only">
+                              {' '}
+                              (langkah {j + 1} dari {langkahProsedur.length})
+                            </span>
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>{framework.lapis_b_prosedur}</p>
+                ))}
+              {i === 2 && (
+                <p>
+                  Terapkan ke masalahmu. {framework.lapis_a_pemetaan}
+                </p>
+              )}
+              {i === 3 && (
+                <p>
+                  Tulis hasil penerapanmu dan catat kapan framework ini salah
+                  alat. {framework.lapis_c_kesalahan}
+                </p>
+              )}
+            </details>
+          ))}
         </details>
       )}
 

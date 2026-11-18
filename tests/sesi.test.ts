@@ -10,6 +10,8 @@ import {
   labelJenisSesi,
   perluKonfirmasiDini,
   perluPilihMasalah,
+  tahapDariElapsed,
+  tahapUntukTick,
 } from '../src/sesi';
 
 describe('perluPilihMasalah', () => {
@@ -79,5 +81,51 @@ describe('formatDurasi', () => {
   it('durasi normal memakai "N menit"', () => {
     expect(formatDurasi(1)).toBe('1 menit');
     expect(formatDurasi(45)).toBe('45 menit');
+  });
+});
+
+describe('tahapDariElapsed', () => {
+  it('batas 45 menit: 0/299 Recall, 300 Prosedur, 1200 Penerapan, 2100 Artefak', () => {
+    expect(tahapDariElapsed(0, 2700)).toBe(0);
+    expect(tahapDariElapsed(299, 2700)).toBe(0);
+    expect(tahapDariElapsed(300, 2700)).toBe(1);
+    expect(tahapDariElapsed(301, 2700)).toBe(1);
+    expect(tahapDariElapsed(1199, 2700)).toBe(1);
+    expect(tahapDariElapsed(1200, 2700)).toBe(2);
+    expect(tahapDariElapsed(2099, 2700)).toBe(2);
+    expect(tahapDariElapsed(2100, 2700)).toBe(3);
+  });
+
+  it('lewat target tetap Artefak', () => {
+    expect(tahapDariElapsed(2700, 2700)).toBe(3);
+    expect(tahapDariElapsed(5000, 2700)).toBe(3);
+  });
+
+  it('target tidak valid diperlakukan sebagai 45 menit', () => {
+    expect(tahapDariElapsed(300, 0)).toBe(1);
+    expect(tahapDariElapsed(300, -5)).toBe(1);
+    expect(tahapDariElapsed(300, Number.NaN)).toBe(1);
+    expect(tahapDariElapsed(299, Number.NaN)).toBe(0);
+    expect(tahapDariElapsed(300, Number.POSITIVE_INFINITY)).toBe(1);
+  });
+
+  it('elapsed negatif dijepit ke 0 (Recall)', () => {
+    expect(tahapDariElapsed(-10, 2700)).toBe(0);
+  });
+
+  it('batas diskalakan ke target lain (12 menit → 80/320/560 detik)', () => {
+    expect(tahapDariElapsed(79, 720)).toBe(0);
+    expect(tahapDariElapsed(80, 720)).toBe(1);
+    expect(tahapDariElapsed(319, 720)).toBe(1);
+    expect(tahapDariElapsed(320, 720)).toBe(2);
+    expect(tahapDariElapsed(560, 720)).toBe(3);
+  });
+});
+
+describe('tahapUntukTick', () => {
+  it('tick 5→Prosedur, 20→Penerapan, 35→Artefak', () => {
+    expect(tahapUntukTick(5)).toBe(1);
+    expect(tahapUntukTick(20)).toBe(2);
+    expect(tahapUntukTick(35)).toBe(3);
   });
 });

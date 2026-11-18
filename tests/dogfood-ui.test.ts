@@ -182,6 +182,7 @@ describe('Session: petunjuk tombol nonaktif + panduan terbuka', () => {
       [],
       [],
       [],
+      0, // sesiSelesaiFramework (pertama kali memakai framework ini)
     ]);
     const { Session } = await import('../src/components/Session');
     const html = renderToString(
@@ -195,14 +196,33 @@ describe('Session: petunjuk tombol nonaktif + panduan terbuka', () => {
     expect(html).toContain('Tombol aktif setelah timer berjalan.');
   });
 
-  it('panduan 4 tahap terbuka default dengan judul per tahap', async () => {
+  it('panduan 4 tahap: accordion, tahap berjalan terbuka + ditandai', async () => {
     const html = await render();
-    expect(html).toContain('<details');
-    expect(html).toContain('open=""');
-    expect(html).toContain('<h3>Recall (0–5′)</h3>');
-    expect(html).toContain('<h3>Prosedur (5–20′)</h3>');
-    expect(html).toContain('<h3>Penerapan (20–35′)</h3>');
-    expect(html).toContain('<h3>Artefak (35–45′)</h3>');
+    expect(html).toContain('<details class="kartu" open="">');
+    // Empat tahap sebagai <details> dengan judul per tahap.
+    expect(html).toContain('Recall (0–5′)');
+    expect(html).toContain('Prosedur (5–20′)');
+    expect(html).toContain('Penerapan (20–35′)');
+    expect(html).toContain('Artefak (35–45′)');
+    // Elapsed 0 → Recall terbuka + ditandai "Tahap ini", yang lain tertutup.
+    expect(html).toContain(
+      'id="tahap-panduan-0" class="tahap-panduan saat-ini" open=""',
+    );
+    expect(html).toContain('Tahap ini');
+    expect(html).toContain('id="tahap-panduan-1" class="tahap-panduan"');
+    expect(html).toContain('Tahap 1: Recall');
+    // Tick bar progres adalah tombol dengan aria-label penanda tahap.
+    expect(html).toContain(
+      'aria-label="Buka tahap Prosedur (mulai menit ke-5)"',
+    );
+    expect(html).toContain(
+      'aria-label="Buka tahap Artefak (mulai menit ke-35)"',
+    );
+    // Checklist prosedur dirender (5 langkah PESTEL).
+    expect(html).toContain('checklist-prosedur');
+    expect(html).toContain('Tulis pertanyaan keputusan yang ingin dijawab.');
+    // Catatan pertama kali (belum ada sesi selesai untuk framework ini).
+    expect(html).toContain('Pertama kali memakai framework ini');
   });
 });
 

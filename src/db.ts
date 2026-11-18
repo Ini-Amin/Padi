@@ -436,7 +436,13 @@ export async function selesaikanSesi(
 }
 
 async function pemakaianIdTerakhir(sesiId: string): Promise<Pemakaian | null> {
-  const daftar = await db.pemakaian.where('sesi_id').equals(sesiId).toArray();
+  // `.filter`, bukan `.where('sesi_id')`: pemakaian tidak mengindeks
+  // sesi_id (skema v1) dan `.where` pada keyPath tanpa indeks melempar
+  // SchemaError — bug ini membuat selesaikanSesi selalu melempar
+  // SETELAH transaksi commit (sesi tertutup, tapi layar penilaian
+  // menampilkan pesan error mentah). Tabel pemakaian kecil (satu baris
+  // per sesi selesai), jadi pemindaian penuh tidak masalah.
+  const daftar = await db.pemakaian.filter((p) => p.sesi_id === sesiId).toArray();
   return daftar[0] ?? null;
 }
 
