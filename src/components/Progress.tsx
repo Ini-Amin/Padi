@@ -21,13 +21,15 @@ export function Progress(): React.JSX.Element {
   const pemakaian = useLiveQuery(() => db.pemakaian.toArray(), []);
   const semuaMasalah = useLiveQuery(() => db.masalah.toArray(), []);
   const jadwal = useLiveQuery(() => db.jadwal_reuse.toArray(), []);
+  const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
 
   if (
     ledger === undefined ||
     semuaSesi === undefined ||
     pemakaian === undefined ||
     semuaMasalah === undefined ||
-    jadwal === undefined
+    jadwal === undefined ||
+    frameworks === undefined
   ) {
     return <p className="muted">Memuat…</p>;
   }
@@ -36,6 +38,7 @@ export function Progress(): React.JSX.Element {
   const aktivitas = new Set(semuaSesi.map((s) => s.tanggal));
   const streak = hitungStreak(aktivitas, hari);
   const masalahById = new Map(semuaMasalah.map((m) => [m.id, m]));
+  const frameworkById = new Map(frameworks.map((f) => [f.id, f]));
   const transfer = hitungTransferRate(pemakaian, masalahById, hari);
   const unikBulanIni = frameworkUnikBulanIni(pemakaian, hari);
   const penyebaran = penyebaranMasalah(pemakaian);
@@ -92,19 +95,20 @@ export function Progress(): React.JSX.Element {
             className={`hari${aktivitas.has(t) ? ' aktif' : ''}`}
           >
             <div className="kotak-hari" />
-            {formatTanggal(t).split(',')[0].slice(0, 3)}
+            {formatTanggal(t).split(',')[0].slice(0, 3)} {t.slice(8, 10)}
           </div>
         ))}
       </div>
+      <p className="muted kecil">Kotak kuning = ada sesi hari itu.</p>
 
       <h2>Metrik toolbox</h2>
       <div className="metrik">
         <div className="kotak">
-          <div className="angka">
-            {transfer.penyebut === 0
-              ? 'Belum ada'
-              : `${Math.round(transfer.rate * 100)}%`}
-          </div>
+          {transfer.penyebut === 0 ? (
+            <div className="angka-kosong">Belum ada</div>
+          ) : (
+            <div className="angka">{`${Math.round(transfer.rate * 100)}%`}</div>
+          )}
           <p className="muted kecil">
             Transfer rate: {transfer.pembilang} dari {transfer.penyebut}{' '}
             framework sudah dipakai untuk masalah baru (90 hari terakhir).
@@ -166,7 +170,14 @@ export function Progress(): React.JSX.Element {
         .map((s) => (
           <div className="baris-daftar" key={s.id}>
             <span>
-              {formatTanggal(s.tanggal)} · {labelJenisSesi(s.jenis)} · {s.durasi_menit} menit ·{' '}
+              <a href={`#/sesi/${s.id}`}>
+                {frameworkById.get(s.framework_id)?.nama ?? 'Framework tidak dikenal'}
+              </a>
+              {s.masalah_id
+                ? ` untuk "${masalahById.get(s.masalah_id)?.judul ?? ''}"`
+                : ''}{' · '}
+              {formatTanggal(s.tanggal)} · {labelJenisSesi(s.jenis)} ·{' '}
+              {s.durasi_menit} menit ·{' '}
               {s.selesai ? 'selesai' : 'belum memenuhi definisi selesai'}
               {s.skor !== null && ` · skor ${s.skor}`}
             </span>

@@ -23,6 +23,7 @@ export function ProblemDetail({ id }: { id: string }): React.JSX.Element {
   );
   const semuaPemakaian = useLiveQuery(() => db.pemakaian.toArray(), []);
   const setMasalahAktif = usePadiStore((s) => s.setMasalahAktif);
+  const masalahAktifId = usePadiStore((s) => s.masalahAktifId);
 
   if (
     masalah === undefined ||
@@ -60,6 +61,9 @@ export function ProblemDetail({ id }: { id: string }): React.JSX.Element {
 
   return (
     <div>
+      <a className="tombol-teks" href="#/masalah">
+        ← Kembali ke Masalah saya
+      </a>
       <h1>{masalah.judul}</h1>
       <p className="muted">
         Dibuat {formatTanggal(masalah.dibuat_pada)} · Status: {masalah.status}
@@ -76,16 +80,18 @@ export function ProblemDetail({ id }: { id: string }): React.JSX.Element {
       </p>
 
       <div className="baris-tombol">
-        <button
-          className="tombol-garis"
-          type="button"
-          onClick={() => {
-            setMasalahAktif(id);
-            navigasi('#/');
-          }}
-        >
-          Jadikan masalah aktif
-        </button>
+        {masalahAktifId !== id && (
+          <button
+            className="tombol-garis"
+            type="button"
+            onClick={() => {
+              setMasalahAktif(id);
+              navigasi('#/');
+            }}
+          >
+            Jadikan masalah aktif
+          </button>
+        )}
         {masalah.status === 'aktif' && (
           <button className="tombol-teks" type="button" onClick={() => void ubahStatus('selesai')}>
             Tandai selesai

@@ -102,16 +102,13 @@ export function Home(): React.JSX.Element {
       {masalahAktif ? (
         <>
           <div className="kartu">
-            <h2>Masalah aktif</h2>
-            <p>
-              <strong>{masalahAktif.judul}</strong>
-            </p>
+            <h2>{masalahAktif.judul}</h2>
             {masalahAktif.deskripsi && <p className="muted">{masalahAktif.deskripsi}</p>}
             <p className="kecil">
               Framework yang sudah dipakai untuk masalah ini:{' '}
               {frameworkUntukMasalah(pemakaian, masalahAktif.id, frameworkById)
                 .map((f) => f.nama)
-                .join(', ') || 'belum ada'}
+                .join(', ') || 'belum ada (sesi draft belum dihitung)'}
             </p>
             <div className="baris-tombol">
               <a className="tombol-teks" href="#/masalah">
@@ -190,7 +187,7 @@ export function Home(): React.JSX.Element {
       <p className="muted kecil">
         Hari ini:{' '}
         {selesaiHariIni === 0
-          ? 'belum ada sesi.'
+          ? 'belum ada sesi selesai.'
           : `${selesaiHariIni} sesi selesai.`}
         {reuseHariIni.length === 0 && ' Tidak ada re-use hari ini.'}
       </p>

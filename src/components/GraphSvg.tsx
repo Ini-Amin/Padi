@@ -356,26 +356,35 @@ export function GraphSvg(): React.JSX.Element {
                 </g>
               );
             })}
+            <text x={LEGENDA_X} y={392}>
+              Status:
+            </text>
             <circle
-              cx={LEGENDA_X + 4}
+              cx={LEGENDA_X + 52}
               cy={388}
               r={4}
               fill="var(--kuning-status)"
             />
+            <text x={LEGENDA_X + 60} y={392}>
+              dipakai
+            </text>
             <circle
-              cx={LEGENDA_X + 16}
+              cx={LEGENDA_X + 114}
               cy={388}
               r={4}
               fill="var(--hijau)"
             />
+            <text x={LEGENDA_X + 122} y={392}>
+              dikuasai
+            </text>
             <circle
-              cx={LEGENDA_X + 28}
+              cx={LEGENDA_X + 178}
               cy={388}
               r={4}
               fill="var(--oranye)"
             />
-            <text x={LEGENDA_X + 36} y={392}>
-              Titik warna: pernah dipakai, dikuasai, perlu re-use
+            <text x={LEGENDA_X + 186} y={392}>
+              perlu re-use
             </text>
           </g>
 

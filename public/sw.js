@@ -10,7 +10,7 @@
  * `skipWaiting` + `clients.claim` membuat versi baru langsung aktif.
  */
 
-const CACHE = 'padi-v11';
+const CACHE = 'padi-v12';
 
 // Path RELATIF (bukan absolut mulai '/'): service worker disajikan dari
 // /padi/sw.js di GitHub Pages, jadi path absolut akan salah menunjuk root

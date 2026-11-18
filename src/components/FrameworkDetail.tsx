@@ -16,6 +16,7 @@ import {
   WARNA_STATUS,
 } from '../status';
 import { navigasi } from '../App';
+import { pecahLangkahProsedur } from '../prosedur';
 
 export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
   const framework = useLiveQuery(() => db.frameworks.get(id), [id]);
@@ -70,6 +71,16 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
     .map((mid) => masalahById.get(mid))
     .filter((m) => m !== undefined);
   const terkait = edges.filter((e) => e.dari === id || e.ke === id);
+  // Kelompokkan per framework terkait: satu framework bisa terhubung lewat
+  // lebih dari satu relasi (mis. PESTEL–Porter: prasyarat + satu tema).
+  const terkaitPerFramework = new Map<string, typeof terkait>();
+  for (const e of terkait) {
+    const lainId = e.dari === id ? e.ke : e.dari;
+    const daftar = terkaitPerFramework.get(lainId) ?? [];
+    daftar.push(e);
+    terkaitPerFramework.set(lainId, daftar);
+  }
+  const langkahProsedur = pecahLangkahProsedur(framework.lapis_b_prosedur);
 
   const simpanKapan = async (): Promise<void> => {
     if (teksKapan === null || menyimpan) return;
@@ -83,10 +94,13 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
 
   return (
     <div>
+      <a className="tombol-teks" href="#/peta">
+        ← Kembali ke Peta
+      </a>
+      <h1>{framework.nama}</h1>
       <p className="muted">
         Tema {framework.tema}: {NAMA_TEMA[framework.tema]} · Katalog #{framework.urutan_katalog}
       </p>
-      <h1>{framework.nama}</h1>
       <p>
         <span className={`dot-status ${WARNA_STATUS[framework.status]}`} />
         {LABEL_STATUS[framework.status]}
@@ -129,7 +143,15 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       </div>
       <div className="kartu">
         <h2>Prosedur: cara memakai</h2>
-        <p>{framework.lapis_b_prosedur}</p>
+        {langkahProsedur ? (
+          <ol>
+            {langkahProsedur.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ol>
+        ) : (
+          <p>{framework.lapis_b_prosedur}</p>
+        )}
       </div>
       <div className="kartu">
         <h2>Kesalahan umum: kapan salah alat</h2>
@@ -228,14 +250,22 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       {terkait.length > 0 && (
         <div className="kartu">
           <h2>Framework terkait</h2>
-          {terkait.map((e) => {
-            const lainId = e.dari === id ? e.ke : e.dari;
+          {[...terkaitPerFramework.entries()].map(([lainId, daftarEdge]) => {
             const lain = frameworkById.get(lainId);
+            const alasan = daftarEdge
+              .map((e) => e.alasan)
+              .filter((a): a is string => a !== null);
             return (
-              <p key={e.id}>
+              <p key={lainId}>
                 <a href={`#/framework/${lainId}`}>{lain?.nama ?? lainId}</a>{' '}
-                <span className="lencana">{e.tipe.replaceAll('_', ' ')}</span>
-                {e.alasan && <span className="muted">: {e.alasan}</span>}
+                {daftarEdge.map((e) => (
+                  <span key={e.tipe} className="lencana">
+                    {e.tipe.replaceAll('_', ' ')}
+                  </span>
+                ))}
+                {alasan.length > 0 && (
+                  <span className="muted">: {alasan.join('; ')}</span>
+                )}
               </p>
             );
           })}

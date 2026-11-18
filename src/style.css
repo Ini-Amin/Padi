@@ -72,17 +72,20 @@ textarea {
 
 h1 {
   font-size: 1.6rem;
+  font-weight: 600;
   line-height: 1.25;
   margin: 0 0 0.5rem;
 }
 
 h2 {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
+  font-weight: 600;
   margin: 1.5rem 0 0.5rem;
 }
 
 h3 {
   font-size: 1rem;
+  font-weight: 600;
   margin: 1.25rem 0 0.4rem;
 }
 
@@ -154,12 +157,16 @@ p {
 }
 
 .kepala {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   padding: 20px 0 12px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
   margin-bottom: 20px;
 }
@@ -225,16 +232,18 @@ p {
   text-align: center;
 }
 
-.tombol-utama:hover {
+.tombol-utama:not(:disabled):hover {
   filter: brightness(0.92);
 }
 
-.tombol-utama:active {
+.tombol-utama:not(:disabled):active {
   filter: brightness(0.85);
 }
 
 .tombol-utama:disabled {
-  opacity: 0.5;
+  background: var(--border);
+  border-color: var(--border);
+  color: var(--muted);
   cursor: not-allowed;
 }
 
@@ -249,12 +258,17 @@ p {
   text-decoration: none;
 }
 
-.tombol-garis:hover {
+.tombol-garis:not(:disabled):hover {
   border-color: var(--text);
 }
 
-.tombol-garis:active {
+.tombol-garis:not(:disabled):active {
   background: var(--card);
+}
+
+.tombol-garis:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
 }
 
 .tombol-teks {
@@ -519,7 +533,14 @@ textarea {
 
 .metrik .angka {
   font-size: 1.6rem;
-  font-weight: 800;
+  font-weight: 600;
+}
+
+/* Nilai metrik yang belum ada (bukan nol): teks tenang, bukan angka besar. */
+.metrik .angka-kosong {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .grafik-hari {
@@ -563,6 +584,11 @@ textarea {
   color: var(--muted);
   font-size: 0.85rem;
   margin-bottom: 4px;
+}
+
+.langkah-aktif {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .pesan-error {

@@ -404,10 +404,13 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
   // --- Tahap sesi (timer) ---
   return (
     <div>
+      <a className="tombol-teks" href="#/">
+        ← Kembali ke Beranda
+      </a>
+      <h1>{framework.nama}</h1>
       <p className="muted">
-        {labelJenisSesi(sesi.jenis)} · {framework.nama}
+        {labelJenisSesi(sesi.jenis)} untuk &quot;{masalahSesi?.judul ?? 'Memuat masalah…'}&quot;
       </p>
-      <h1>{masalahSesi?.judul ?? 'Memuat masalah…'}</h1>
       {(sesi.jenis === 're_use' || sesi.jenis === 'catch_up') && (
         <p className="muted">
           Terapkan {framework.nama} ke masalah ini dari ingatan. Catatan lama
@@ -433,7 +436,12 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
             {elapsedDetik === 0 ? 'Mulai timer' : 'Lanjutkan'}
           </button>
         )}
-        <button className="tombol-garis" type="button" onClick={() => void kePenilaian()}>
+        <button
+          className="tombol-garis"
+          type="button"
+          disabled={(elapsedDetik ?? 0) === 0}
+          onClick={() => void kePenilaian()}
+        >
           Selesai &amp; Nilai
         </button>
       </div>

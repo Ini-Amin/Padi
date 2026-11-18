@@ -3,8 +3,9 @@
  * adalah menyatakan satu masalah nyata. Padi langsung menunjukkan 3
  * framework yang cocok, lalu user masuk sesi 45 menit pertama.
  *
- * Langkah 0: textarea masalah + contoh yang bisa diklik + kriteria opsional.
- * Langkah 1: ranking 3 framework untuk masalah yang baru dibuat.
+ * Langkah 0: textarea masalah + contoh yang bisa diklik + kriteria (pilih
+ * minimal satu, agar matcher punya bahan). Langkah 1: ranking 3 framework
+ * untuk masalah yang baru dibuat.
  * "Lewati" menandai onboarding selesai tanpa masalah (Beranda kosong).
  * Mode `ulang` (dari Progres): menyatakan masalah baru, tanpa gate.
  */
@@ -107,7 +108,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
   /** Buat masalah, tandai onboarding selesai, tampilkan ranking. */
   const lihatCocok = async (): Promise<void> => {
     const teksMasalah = masalah.trim();
-    if (teksMasalah.length === 0 || menyimpan) return;
+    if (teksMasalah.length === 0 || menyimpan || kriteria.size === 0) return;
     if (!bolehSelesaikan(profilTersimpan, ulang)) return;
     const jawaban: JawabanOnboarding = {
       masalah: teksMasalah,
@@ -189,7 +190,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
       </div>
       <h2>Apa inti masalah ini?</h2>
       <p className="muted kecil">
-        Opsional. Membantu Padi memilih framework yang lebih cocok.
+        Pilih minimal satu. Padi memakai ini untuk mencocokkan framework.
       </p>
       <div>
         {JENIS_MASALAH.map((k) => (
@@ -208,7 +209,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
         <button
           className="tombol-utama"
           type="button"
-          disabled={menyimpan || masalah.trim().length === 0}
+          disabled={menyimpan || masalah.trim().length === 0 || kriteria.size === 0}
           onClick={() => void lihatCocok()}
         >
           {menyimpan ? 'Menyimpan…' : 'Lihat framework yang cocok'}

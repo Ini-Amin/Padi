@@ -44,7 +44,11 @@ export function MapList(): React.JSX.Element {
                   <strong>{f.nama}</strong>{' '}
                   <span className="muted kecil">{LABEL_STATUS[f.status]}</span>
                 </span>
-                <a className="tombol-garis" href={`#/framework/${f.id}`}>
+                <a
+                  className="tombol-garis"
+                  href={`#/framework/${f.id}`}
+                  aria-label={`Detail ${f.nama}`}
+                >
                   Detail
                 </a>
               </div>

@@ -1,8 +1,9 @@
 /**
  * Flow nyatakan masalah (dokumen 04 §4.4): satu pertanyaan per satu:
  * judul, jenis masalah, tekanan waktu, sumber daya, apa yang sudah dicoba.
- * Setiap langkah (kecuali judul) bisa dilewati. Output: Masalah + kriteria
- * matching, lalu kembali ke Beranda dengan ranking untuk masalah itu.
+ * Jenis masalah wajib (minimal satu) agar matcher punya kriteria; langkah
+ * lain kecuali judul bisa dilewati. Output: Masalah + kriteria matching,
+ * lalu kembali ke Beranda dengan ranking untuk masalah itu.
  */
 import { useState } from 'react';
 import type { KriteriaMasalah } from '../domain';
@@ -73,7 +74,17 @@ export function ProblemFlow(): React.JSX.Element {
   return (
     <div>
       <p className="indikator-langkah">
-        Langkah {langkah + 1} dari {LANGKAH.length} · {LANGKAH[langkah]}
+        {LANGKAH.map((nama, i) => (
+          <span key={nama}>
+            {i > 0 && ' · '}
+            <span
+              className={i === langkah ? 'langkah-aktif' : undefined}
+              aria-current={i === langkah ? 'step' : undefined}
+            >
+              {nama}
+            </span>
+          </span>
+        ))}
       </p>
 
       {langkah === 0 && (
@@ -98,7 +109,7 @@ export function ProblemFlow(): React.JSX.Element {
       {langkah === 1 && (
         <>
           <h1>Apa inti masalahmu?</h1>
-          <p className="muted">Pilih semua yang cocok. Boleh lebih dari satu.</p>
+          <p className="muted">Pilih minimal satu. Boleh lebih dari satu.</p>
           <div>
             {JENIS_MASALAH.map((k) => (
               <button
@@ -195,12 +206,15 @@ export function ProblemFlow(): React.JSX.Element {
             <button
               className="tombol-utama"
               type="button"
-              disabled={langkah === 0 && judul.trim().length === 0}
+              disabled={
+                (langkah === 0 && judul.trim().length === 0) ||
+                (langkah === 1 && jenis.size === 0)
+              }
               onClick={lanjut}
             >
               Lanjut
             </button>
-            {langkah > 0 && (
+            {langkah > 1 && (
               <button className="tombol-teks" type="button" onClick={lanjut}>
                 Lewati
               </button>
@@ -216,6 +230,9 @@ export function ProblemFlow(): React.JSX.Element {
             {menyimpan ? 'Menyimpan…' : 'Simpan masalah & lihat ranking'}
           </button>
         )}
+        <a className="tombol-teks" href="#/masalah">
+          Batalkan
+        </a>
       </div>
     </div>
   );

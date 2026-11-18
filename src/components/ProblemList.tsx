@@ -79,7 +79,7 @@ export function ProblemList(): React.JSX.Element {
                     navigasi('#/');
                   }}
                 >
-                  Lanjutkan
+                  Ke Beranda
                 </button>
               )}
             </div>

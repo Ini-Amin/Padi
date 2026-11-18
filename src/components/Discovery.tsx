@@ -47,7 +47,7 @@ export function Discovery(): React.JSX.Element {
   };
 
   const simpan = async (): Promise<void> => {
-    if (menyimpan || judul.trim().length === 0) return;
+    if (menyimpan || judul.trim().length === 0 || jenis.size === 0) return;
     setMenyimpan(true);
     try {
       const masalah = await buatMasalah({
@@ -144,7 +144,7 @@ export function Discovery(): React.JSX.Element {
             onChange={(e) => setJudul(e.target.value)}
           />
           <h2>Apa inti masalah ini?</h2>
-          <p className="muted kecil">Opsional. Membantu Padi memilih framework.</p>
+          <p className="muted kecil">Pilih minimal satu. Padi memakai ini untuk mencocokkan framework.</p>
           <div>
             {JENIS_MASALAH.map((k) => (
               <button
@@ -165,7 +165,7 @@ export function Discovery(): React.JSX.Element {
             <button
               className="tombol-utama"
               type="button"
-              disabled={menyimpan || judul.trim().length === 0}
+              disabled={menyimpan || judul.trim().length === 0 || jenis.size === 0}
               onClick={() => void simpan()}
             >
               {menyimpan ? 'Menyimpan…' : 'Ya, ini masalah saya'}

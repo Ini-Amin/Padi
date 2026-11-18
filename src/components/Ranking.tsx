@@ -112,13 +112,14 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
   };
 
   if (hasil.peringkat.length === 0 && !hasil.eksplorasi) {
+    const tanpaKriteria = masalah.kriteria.length === 0;
     return (
       <div className="kartu">
         <h2>Framework yang cocok</h2>
         <p>
-          Belum ada framework yang cocok dengan kriteria masalah ini. Coba
-          nyatakan ulang masalahmu dengan kriteria yang berbeda, atau jelajahi
-          Peta untuk melihat semua framework.
+          {tanpaKriteria
+            ? 'Masalah ini belum punya kriteria, jadi Padi belum bisa mencocokkan framework. Jelajahi Peta untuk memilih framework sendiri.'
+            : 'Belum ada framework yang cocok dengan kriteria masalah ini. Coba nyatakan ulang masalahmu dengan kriteria yang berbeda, atau jelajahi Peta untuk melihat semua framework.'}
         </p>
         <div className="baris-tombol">
           <a className="tombol-garis" href="#/peta">

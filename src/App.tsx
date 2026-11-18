@@ -105,6 +105,13 @@ export function App(): React.JSX.Element {
     if (route.nama === 'beranda' && nama === 'beranda') return 'aktif';
     if (route.nama === 'peta' && nama === 'peta') return 'aktif';
     if (route.nama === 'progres' && nama === 'progres') return 'aktif';
+    if (
+      (route.nama === 'daftar-masalah' ||
+        route.nama === 'masalah' ||
+        route.nama === 'masalah-baru') &&
+      nama === 'masalah'
+    )
+      return 'aktif';
     return '';
   };
 
@@ -129,6 +136,9 @@ export function App(): React.JSX.Element {
           </a>
           <a href="#/peta" className={aktif('peta')}>
             Peta
+          </a>
+          <a href="#/masalah" className={aktif('masalah')}>
+            Masalah
           </a>
           <a href="#/progres" className={aktif('progres')}>
             Progres
