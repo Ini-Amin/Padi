@@ -81,7 +81,7 @@ export function ProblemFlow(): React.JSX.Element {
               className={i === langkah ? 'langkah-aktif' : undefined}
               aria-current={i === langkah ? 'step' : undefined}
             >
-              {nama}
+              {i + 1}. {nama}
             </span>
           </span>
         ))}
@@ -103,13 +103,16 @@ export function ProblemFlow(): React.JSX.Element {
             placeholder="Tulis masalahmu di sini"
             autoFocus
           />
+          {judul.trim().length === 0 && (
+            <p className="muted kecil">Isi judul dulu untuk lanjut.</p>
+          )}
         </>
       )}
 
       {langkah === 1 && (
         <>
           <h1>Apa inti masalahmu?</h1>
-          <p className="muted">Pilih minimal satu. Boleh lebih dari satu.</p>
+          <p className="muted">Pilih minimal satu. Boleh lebih dari satu. Padi memakai ini untuk mencocokkan framework.</p>
           <div>
             {JENIS_MASALAH.map((k) => (
               <button
@@ -129,6 +132,10 @@ export function ProblemFlow(): React.JSX.Element {
       {langkah === 2 && (
         <>
           <h1>Apakah masalah ini ada tenggat waktunya?</h1>
+          <p className="muted">
+            Dipakai untuk mencocokkan framework: masalah bertenggat mengarah
+            ke framework berritme cepat seperti Agile dan Kanban.
+          </p>
           <div role="radiogroup" aria-label="Tenggat waktu">
             <button
               type="button"
@@ -156,6 +163,10 @@ export function ProblemFlow(): React.JSX.Element {
         <>
           <h1>Apakah sumber dayamu terbatas untuk masalah ini?</h1>
           <p className="muted">Waktu, uang, orang, atau ketiganya.</p>
+          <p className="muted">
+            Dipakai untuk mencocokkan framework: jawaban "terbatas"
+            mengutamakan framework yang membantumu memilih dengan hati-hati.
+          </p>
           <div role="radiogroup" aria-label="Keterbatasan sumber daya">
             <button
               type="button"
@@ -183,7 +194,8 @@ export function ProblemFlow(): React.JSX.Element {
         <>
           <h1>Apa yang sudah kamu coba?</h1>
           <p className="muted">
-            Opsional. Ini membantu menandai apa yang sudah tidak perlu diulang.
+            Opsional. Ini tampil di halaman masalahmu, supaya kamu tidak
+            mengulang yang sudah dicoba.
           </p>
           <label htmlFor="dicoba">Yang sudah dicoba</label>
           <textarea

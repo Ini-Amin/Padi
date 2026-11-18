@@ -31,3 +31,25 @@ export function labelJenisSesi(jenis: JenisSesi): string {
       return 'Capstone';
   }
 }
+
+/**
+ * Apakah "Selesai & Nilai" perlu konfirmasi dini? Berlaku bila timer sudah
+ * berjalan tapi belum separuh target — menyelesaikan jauh lebih awal
+ * biasanya tidak disengaja (klik salah atau belum paham target).
+ */
+export function perluKonfirmasiDini(
+  elapsedDetik: number,
+  targetDetik: number,
+): boolean {
+  return elapsedDetik > 0 && elapsedDetik < targetDetik / 2;
+}
+
+/** Judul artefak default saat dicentang (diisi dari catatan sesi). */
+export function judulArtefakDefault(
+  namaFramework: string,
+  judulMasalah: string | null,
+): string {
+  return judulMasalah
+    ? `${namaFramework} untuk "${judulMasalah}"`
+    : namaFramework;
+}

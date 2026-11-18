@@ -72,8 +72,8 @@ export function Progress(): React.JSX.Element {
         <div className="kotak">
           <div className="angka">{totalXp(ledger)} XP</div>
           <p className="muted kecil">
-            +100 per sesi penerapan · +50 per re-use · +50 artefak berkualitas ·
-            +25 skor 3. XP tidak pernah berkurang.
+            Cara dapat XP: +100 per sesi penerapan · +50 per re-use · +50
+            artefak berkualitas · +25 skor 3. XP tidak pernah berkurang.
           </p>
         </div>
         <div className="kotak">

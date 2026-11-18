@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import gsap from 'gsap';
 import type { Framework, Masalah } from '../domain';
+import { LABEL_KRITERIA } from '../domain';
 import {
   alternatifBerikutnya,
   rankingUntukMasalah,
@@ -135,6 +136,10 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
   return (
     <div className="kartu" ref={refKartu}>
       <h2>Framework yang cocok</h2>
+      <p className="muted kecil">
+        Kriteriamu:{' '}
+        {masalah.kriteria.map((k) => LABEL_KRITERIA[k]).join(', ')}.
+      </p>
       <div ref={refDaftar}>
         {daftar.map((h, i) => (
           <BarisRanking
@@ -160,6 +165,12 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
       {menampilkanAlternatif && alternatif.length === 0 && (
         <p className="muted">Tidak ada alternatif lain untuk masalah ini.</p>
       )}
+      {!menampilkanAlternatif && hasil.eksplorasi && (
+        <p className="muted kecil">
+          Eksplorasi: framework yang belum pernah kamu pakai, untuk mencoba
+          hal baru.
+        </p>
+      )}
       <div className="baris-tombol">
         {!menampilkanAlternatif && (
           <button
@@ -183,6 +194,12 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
           Tidak cocok
         </button>
       </div>
+      {!menampilkanAlternatif && (
+        <p className="muted kecil">
+          Ganti menampilkan peringkat 4–6. Tidak cocok mencatat umpan balikmu
+          dan menampilkan alternatif.
+        </p>
+      )}
       {umpanBalik && (
         <p className="muted kecil">
           Terima kasih, umpan balikmu dicatat. Ranking berikutnya ditampilkan

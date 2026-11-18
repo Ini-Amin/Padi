@@ -172,11 +172,11 @@ export function App(): React.JSX.Element {
             {route.nama === 'masalah-baru' && <ProblemFlow />}
             {route.nama === 'masalah' && <ProblemDetail id={route.id} />}
             {route.nama === 'sesi' && (
-              <Session id={route.id} reuseId={route.reuseId} />
+              <Session key={route.id} id={route.id} reuseId={route.reuseId} />
             )}
             {route.nama === 'discovery' && <Discovery />}
             {route.nama === 'peta' && <MapList />}
-            {route.nama === 'framework' && <FrameworkDetail id={route.id} />}
+            {route.nama === 'framework' && <FrameworkDetail key={route.id} id={route.id} />}
             {route.nama === 'catch-up' && <CatchUp />}
             {route.nama === 'progres' && <Progress />}
           </>

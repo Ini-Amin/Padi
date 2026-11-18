@@ -117,7 +117,11 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
             onClick={() => void tandaiDikenal(id)}
           >
             Saya sudah tahu framework ini
-          </button>
+          </button>{' '}
+          <span className="muted kecil">
+            Menandai framework ini sudah kamu kenal; framework yang dikenal
+            tidak muncul di slot eksplorasi.
+          </span>
         </p>
       ) : (
         <p className="muted kecil">
@@ -160,6 +164,10 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
 
       <div className="kartu">
         <h2>Syarat "dikuasai"</h2>
+        <p className="muted kecil">
+          Dikuasai berarti kamu bisa memakai framework ini dengan baik.
+          Transfer: memakai framework yang sama untuk masalah yang berbeda.
+        </p>
         <p className={syarat.transfer ? 'teks-hijau' : ''}>
           {syarat.transfer ? 'Terpenuhi' : 'Belum'}. Transfer: dipakai untuk{' '}
           {jumlahMasalah} dari 2 masalah berbeda (skor ≥2).

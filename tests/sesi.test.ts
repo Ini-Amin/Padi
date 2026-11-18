@@ -4,7 +4,12 @@
  * (retrieval practice); penerapan dan capstone tidak.
  */
 import { describe, expect, it } from 'vitest';
-import { labelJenisSesi, perluPilihMasalah } from '../src/sesi';
+import {
+  judulArtefakDefault,
+  labelJenisSesi,
+  perluKonfirmasiDini,
+  perluPilihMasalah,
+} from '../src/sesi';
 
 describe('perluPilihMasalah', () => {
   it('re-use dan catch-up tanpa masalah → pilih masalah dulu', () => {
@@ -29,5 +34,38 @@ describe('labelJenisSesi', () => {
     expect(labelJenisSesi('re_use')).toBe('Re-use');
     expect(labelJenisSesi('catch_up')).toBe('Catch-up');
     expect(labelJenisSesi('capstone')).toBe('Capstone');
+  });
+});
+
+describe('perluKonfirmasiDini', () => {
+  it('timer belum jalan → tidak perlu (tombol nonaktif)', () => {
+    expect(perluKonfirmasiDini(0, 2700)).toBe(false);
+  });
+
+  it('di bawah separuh target → perlu konfirmasi', () => {
+    expect(perluKonfirmasiDini(95, 2700)).toBe(true);
+    expect(perluKonfirmasiDini(1349, 2700)).toBe(true);
+  });
+
+  it('separuh target atau lebih → langsung ke penilaian', () => {
+    expect(perluKonfirmasiDini(1350, 2700)).toBe(false);
+    expect(perluKonfirmasiDini(2700, 2700)).toBe(false);
+  });
+
+  it('target 12 menit (re-use): batas separuh 360 detik', () => {
+    expect(perluKonfirmasiDini(359, 720)).toBe(true);
+    expect(perluKonfirmasiDini(360, 720)).toBe(false);
+  });
+});
+
+describe('judulArtefakDefault', () => {
+  it('memakai nama framework + judul masalah', () => {
+    expect(judulArtefakDefault('OKRs', 'Tidak tahu tujuan hidup')).toBe(
+      'OKRs untuk "Tidak tahu tujuan hidup"',
+    );
+  });
+
+  it('tanpa masalah → hanya nama framework', () => {
+    expect(judulArtefakDefault('OKRs', null)).toBe('OKRs');
   });
 });

@@ -180,7 +180,7 @@ export function GraphSvg(): React.JSX.Element {
           className="peta-svg"
           viewBox={layout.viewBox}
           role="group"
-          aria-label={`Peta ${layout.nodes.length} framework dalam ${layout.edges.length} relasi${jumlahSembunyi > 0 ? `, ${jumlahSembunyi} relasi satu tema disembunyikan` : ''}, dikelompokkan per tema.`}
+          aria-label={`Peta ${layout.nodes.length} framework dalam ${layout.edges.length} relasi${jumlahSembunyi > 0 ? `, ${jumlahSembunyi} relasi satu tema disembunyikan — centang 'Tampilkan relasi satu tema' di atas untuk melihatnya` : ''}, dikelompokkan per tema.`}
           onClick={batalkan}
         >
           <defs>
@@ -445,6 +445,9 @@ export function GraphSvg(): React.JSX.Element {
                 .filter((e) => e.tipe === 'prasyarat' && e.dari === dipilih.id)
                 .map((e) => e.ke),
             )}
+          </p>
+          <p className="muted kecil">
+            Node lain diredupkan — klik Tutup untuk melihat semua.
           </p>
           <div className="baris-tombol">
             <a className="tombol-garis" href={`#/framework/${dipilih.id}`}>

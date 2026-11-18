@@ -589,6 +589,8 @@ textarea {
 .langkah-aktif {
   color: var(--text);
   font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .pesan-error {

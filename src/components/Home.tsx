@@ -108,9 +108,13 @@ export function Home(): React.JSX.Element {
               Framework yang sudah dipakai untuk masalah ini:{' '}
               {frameworkUntukMasalah(pemakaian, masalahAktif.id, frameworkById)
                 .map((f) => f.nama)
-                .join(', ') || 'belum ada (sesi draft belum dihitung)'}
+                .join(', ') ||
+                'belum ada — sesi yang dimulai tapi belum dinilai tidak dihitung'}
             </p>
             <div className="baris-tombol">
+              <a className="tombol-teks" href="#/masalah">
+                Lihat semua masalah ({semuaMasalah.length})
+              </a>
               <a className="tombol-teks" href="#/masalah">
                 Ganti masalah
               </a>
@@ -148,6 +152,10 @@ export function Home(): React.JSX.Element {
       {kelompokCatchUp.length > 0 && (
         <div className="kartu">
           <h2>Re-use terlewat</h2>
+          <p className="muted kecil">
+            Re-use: memakai lagi framework yang sudah dipelajari, untuk
+            masalah lain.
+          </p>
           <p>
             <strong>{totalTerlewat} re-use</strong> terlewat lebih dari 3 hari,
             dikelompokkan jadi {kelompokCatchUp.length} sesi catch-up.
@@ -163,6 +171,10 @@ export function Home(): React.JSX.Element {
       {reuseHariIni.length > 0 && (
         <div className="kartu">
           <h2>Re-use hari ini</h2>
+          <p className="muted kecil">
+            Re-use: memakai lagi framework yang sudah dipelajari, untuk
+            masalah lain.
+          </p>
           {reuseHariIni.map((j) => (
             <div className="baris-daftar" key={j.id}>
               <span>
@@ -189,7 +201,7 @@ export function Home(): React.JSX.Element {
         {selesaiHariIni === 0
           ? 'belum ada sesi selesai.'
           : `${selesaiHariIni} sesi selesai.`}
-        {reuseHariIni.length === 0 && ' Tidak ada re-use hari ini.'}
+        {reuseHariIni.length === 0 && ' Tidak ada pengulangan terjadwal hari ini.'}
       </p>
     </div>
   );
