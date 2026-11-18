@@ -11,6 +11,7 @@ import type { Artefak, ISODate, Masalah, Sesi, Skor } from '../domain';
 import { formatTanggal } from '../dates';
 import { RUBRIK } from '../rubrik';
 import {
+  formatDurasi,
   judulArtefakDefault,
   labelJenisSesi,
   perluKonfirmasiDini,
@@ -300,7 +301,7 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
         <h1>Nilai sesi ini</h1>
         <p className="muted">
           {framework.nama} · {masalahSesi?.judul ?? ''} ·{' '}
-          {Math.floor(elapsedRef.current / 60)} menit
+          {formatDurasi(Math.floor(elapsedRef.current / 60))}
         </p>
 
         <h2>Apakah sesi ini menghasilkan artefak?</h2>
@@ -643,8 +644,7 @@ function RingkasanSelesai({
       <h1>{labelJenisSesi(sesi.jenis)} selesai.</h1>
       <p className="muted">
         {frameworkNama}
-        {masalah ? ` untuk "${masalah.judul}"` : ''} · {sesi.durasi_menit}{' '}
-        menit
+        {masalah ? ` untuk "${masalah.judul}"` : ''} · {formatDurasi(sesi.durasi_menit)}
       </p>
       {rubrik !== undefined && (
         <p>

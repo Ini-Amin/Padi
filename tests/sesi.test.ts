@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  formatDurasi,
   judulArtefakDefault,
   labelJenisSesi,
   perluKonfirmasiDini,
@@ -67,5 +68,16 @@ describe('judulArtefakDefault', () => {
 
   it('tanpa masalah → hanya nama framework', () => {
     expect(judulArtefakDefault('OKRs', null)).toBe('OKRs');
+  });
+});
+
+describe('formatDurasi', () => {
+  it('0 menit → "<1 menit", bukan "0 menit"', () => {
+    expect(formatDurasi(0)).toBe('<1 menit');
+  });
+
+  it('durasi normal memakai "N menit"', () => {
+    expect(formatDurasi(1)).toBe('1 menit');
+    expect(formatDurasi(45)).toBe('45 menit');
   });
 });

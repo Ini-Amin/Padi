@@ -134,7 +134,7 @@ export function ProblemFlow(): React.JSX.Element {
           <h1>Apakah masalah ini ada tenggat waktunya?</h1>
           <p className="muted">
             Dipakai untuk mencocokkan framework: masalah bertenggat mengarah
-            ke framework berritme cepat seperti Agile dan Kanban.
+            ke framework yang bergerak cepat seperti Agile dan Kanban.
           </p>
           <div role="radiogroup" aria-label="Tenggat waktu">
             <button

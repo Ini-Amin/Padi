@@ -53,3 +53,11 @@ export function judulArtefakDefault(
     ? `${namaFramework} untuk "${judulMasalah}"`
     : namaFramework;
 }
+
+/**
+ * Label durasi sesi. Sesi di bawah 1 menit (mis. selesai dini setelah
+ * 54 detik) ditampilkan "<1 menit", bukan "0 menit".
+ */
+export function formatDurasi(menit: number): string {
+  return menit <= 0 ? '<1 menit' : `${menit} menit`;
+}

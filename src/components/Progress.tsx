@@ -8,7 +8,7 @@ import { db, eksporData } from '../db';
 import { formatTanggal, hariIni, tambahHari } from '../dates';
 import { hitungStreak, totalXp } from '../gamification';
 import { kelompokCatchUp } from '../scheduler';
-import { labelJenisSesi } from '../sesi';
+import { formatDurasi, labelJenisSesi } from '../sesi';
 import {
   frameworkUnikBulanIni,
   hitungTransferRate,
@@ -177,7 +177,7 @@ export function Progress(): React.JSX.Element {
                 ? ` untuk "${masalahById.get(s.masalah_id)?.judul ?? ''}"`
                 : ''}{' · '}
               {formatTanggal(s.tanggal)} · {labelJenisSesi(s.jenis)} ·{' '}
-              {s.durasi_menit} menit ·{' '}
+              {formatDurasi(s.durasi_menit)} ·{' '}
               {s.selesai ? 'selesai' : 'belum memenuhi definisi selesai'}
               {s.skor !== null && ` · skor ${s.skor}`}
             </span>
