@@ -63,24 +63,3 @@ export function hitungStreak(aktivitas: ReadonlySet<string>, hariIni: ISODate): 
   return streak;
 }
 
-/** Apakah streak masih hidup (ada aktivitas hari ini atau kemarin). */
-export function streakHidup(aktivitas: ReadonlySet<string>, hariIni: ISODate): boolean {
-  return (
-    aktivitas.has(hariIni) || aktivitas.has(tambahHari(hariIni, -1))
-  );
-}
-
-/** Jarak hari sejak aktivitas terakhir (0 = hari ini). Null jika belum pernah. */
-export function hariSejakAktivitas(
-  aktivitas: ReadonlySet<string>,
-  hariIni: ISODate,
-): number | null {
-  let jarak = 0;
-  let cursor: ISODate = hariIni;
-  while (jarak <= 3650) {
-    if (aktivitas.has(cursor)) return jarak;
-    cursor = tambahHari(cursor, -1);
-    jarak += 1;
-  }
-  return null;
-}

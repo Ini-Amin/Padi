@@ -27,7 +27,6 @@ import { LABEL_STATUS, hitungProgres } from '../status';
 import type { TipeEdge } from '../domain';
 import { useGerakanAktif } from '../gerakan';
 import {
-  BATAS_LEGENDA,
   BATAS_PROGRES,
   DESKRIPSI_EDGE,
   GAYA_EDGE,
@@ -50,9 +49,6 @@ const URUTAN_LEGENDA: TipeEdge[] = [
   'dipakai_bersama',
   'kontras',
 ];
-
-/** Tepi kiri legenda di dalam SVG (sama dengan tepi kiri kolom A). */
-const LEGENDA_X = BATAS_LEGENDA.x0;
 
 /**
  * Baris ringkasan progres (stacked bar + hitungan): urutan = urutan
@@ -157,6 +153,14 @@ export function GraphSvg(): React.JSX.Element {
 
   return (
     <div className={gerakanAktif ? 'gerakan-aktif' : undefined}>
+      <h2>
+        {layout.nodes.length} framework dalam {URUTAN_TEMA.length} tema —
+        garis tebal = prasyarat
+      </h2>
+      <p className="panduan-peta">
+        Prasyarat = garis tebal hijau berpanah · kolom = tema · klik node
+        untuk memilih
+      </p>
       {modeJalur && jalur !== null && (
         <p className="kecil" role="status">
           {jalur.sebelum.size} sebelum dan {jalur.sesudah.size} sesudahnya.
@@ -325,69 +329,6 @@ export function GraphSvg(): React.JSX.Element {
             );
           })}
 
-          {/* Legenda di dalam SVG, mengisi zona mati kiri bawah
-              (BATAS_LEGENDA, diverifikasi bebas edge oleh tes) supaya
-              selalu terlihat bersama peta, bukan di bawah fold. */}
-          <g className="peta-legenda-teks">
-            {URUTAN_LEGENDA.map((tipe, i) => {
-              const gaya = GAYA_EDGE[tipe];
-              const y = 304 + i * 22;
-              // Baris legenda meredup saat tipenya tidak tampil, supaya
-              // legenda tidak mengklaim garis yang tidak ada di peta.
-              const redup =
-                tipe === 'satu_tema' && !tampilkanSatuTema;
-              return (
-                <g
-                  key={tipe}
-                  className={redup ? 'peta-legenda-redup' : undefined}
-                >
-                  <line
-                    x1={LEGENDA_X}
-                    y1={y - 4}
-                    x2={LEGENDA_X + 28}
-                    y2={y - 4}
-                    stroke={gaya.stroke}
-                    strokeWidth={gaya.lebar}
-                    strokeDasharray={gaya.dasharray ?? undefined}
-                  />
-                  <text x={LEGENDA_X + 36} y={y}>
-                    {LABEL_EDGE[tipe]}: {DESKRIPSI_EDGE[tipe]}
-                  </text>
-                </g>
-              );
-            })}
-            <text x={LEGENDA_X} y={392}>
-              Status:
-            </text>
-            <circle
-              cx={LEGENDA_X + 52}
-              cy={388}
-              r={4}
-              fill="var(--kuning-status)"
-            />
-            <text x={LEGENDA_X + 60} y={392}>
-              dipakai
-            </text>
-            <circle
-              cx={LEGENDA_X + 114}
-              cy={388}
-              r={4}
-              fill="var(--hijau)"
-            />
-            <text x={LEGENDA_X + 122} y={392}>
-              dikuasai
-            </text>
-            <circle
-              cx={LEGENDA_X + 178}
-              cy={388}
-              r={4}
-              fill="var(--oranye)"
-            />
-            <text x={LEGENDA_X + 186} y={392}>
-              perlu re-use
-            </text>
-          </g>
-
           {/* Ringkasan progres di zona mati kanan bawah (BATAS_PROGRES,
               diverifikasi bebas edge dan bebas node oleh tes): stacked
               bar + hitungan per status dari data live, bukan dekorasi. */}
@@ -422,6 +363,55 @@ export function GraphSvg(): React.JSX.Element {
             ))}
           </g>
         </svg>
+      </div>
+
+      {/* Legenda HTML di bawah peta (di luar .peta-gulir): tetap terlihat
+          di bawah 804px saat SVG disembunyikan. Contoh garis memakai
+          <line> (bukan <path>) supaya hitungan edge di tes tidak berubah.
+          Baris meredup saat tipenya tidak tampil. */}
+      <div className="legenda-peta">
+        {URUTAN_LEGENDA.map((tipe) => {
+          const gaya = GAYA_EDGE[tipe];
+          const redup = tipe === 'satu_tema' && !tampilkanSatuTema;
+          return (
+            <div
+              key={tipe}
+              className={`baris-legenda${redup ? ' peta-legenda-redup' : ''}`}
+            >
+              <svg
+                className="contoh-garis"
+                width="28"
+                height="8"
+                aria-hidden="true"
+              >
+                <line
+                  x1="0"
+                  y1="4"
+                  x2="28"
+                  y2="4"
+                  stroke={gaya.stroke}
+                  strokeWidth={gaya.lebar}
+                  strokeDasharray={gaya.dasharray ?? undefined}
+                />
+              </svg>
+              <span>
+                <strong>{LABEL_EDGE[tipe]}</strong>: {DESKRIPSI_EDGE[tipe]}
+              </span>
+            </div>
+          );
+        })}
+        <div className="baris-legenda">
+          <span>Status:</span>
+          <span>
+            <span className="dot-status kuning" /> dipakai
+          </span>
+          <span>
+            <span className="dot-status hijau" /> dikuasai
+          </span>
+          <span>
+            <span className="dot-status oranye" /> perlu re-use
+          </span>
+        </div>
       </div>
 
       {dipilih !== undefined && (

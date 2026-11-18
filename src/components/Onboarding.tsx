@@ -25,7 +25,7 @@ import {
 } from '../onboarding';
 import { Ranking } from './Ranking';
 import { navigasi } from '../App';
-import { useGerakanAktif, useJudulAnimasi } from '../gerakan';
+import { useGerakanAktif } from '../gerakan';
 
 /** Kriteria opsional langkah masalah: sama seperti Discovery/ProblemFlow. */
 const JENIS_MASALAH: KriteriaMasalah[] = [
@@ -59,7 +59,6 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
   const [masalahBaru, setMasalahBaru] = useState<Masalah | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
   const gerakanAktif = useGerakanAktif();
-  const refJudul = useJudulAnimasi();
   const refLangkah = useRef<HTMLDivElement | null>(null);
 
   // Transisi antar langkah (GSAP): layar masuk dengan fade + naik sedikit.
@@ -160,7 +159,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
   return (
     <div ref={refLangkah}>
       <p className="indikator-langkah">Langkah 1 dari 2: masalahmu</p>
-      <h1 ref={refJudul} className="judul-animasi">
+      <h1>
         Masalah apa yang sedang kamu hadapi?
       </h1>
       <p className="muted">

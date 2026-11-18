@@ -68,22 +68,20 @@ export function Progress(): React.JSX.Element {
     <div>
       <h1>Progres</h1>
 
-      <div className="metrik">
-        <div className="kotak">
-          <div className="angka">{totalXp(ledger)} XP</div>
-          <p className="muted kecil">
-            Cara dapat XP: +100 per sesi penerapan · +50 per re-use · +50
-            artefak berkualitas · +25 skor 3. XP tidak pernah berkurang.
-          </p>
-        </div>
-        <div className="kotak">
-          <div className="angka">{streak} hari</div>
-          <p className="muted kecil">
-            Streak: hari berturut-turut dengan minimal 1 aktivitas. Streak tidak
-            membuka atau mengunci apa pun.
-          </p>
-        </div>
+      <div className="baris-metrik">
+        <span>XP</span>
+        <span className="angka">{totalXp(ledger)} XP</span>
       </div>
+      <div className="baris-metrik">
+        <span>Streak</span>
+        <span className="angka">{streak} hari</span>
+      </div>
+      <p className="muted kecil">
+        Cara dapat XP: +100 per sesi penerapan · +50 per re-use · +50
+        artefak berkualitas · +25 skor 3. XP tidak pernah berkurang.
+        Streak: hari berturut-turut dengan minimal 1 aktivitas. Streak tidak
+        membuka atau mengunci apa pun.
+      </p>
 
       <h2>7 hari terakhir</h2>
       <div className="grafik-hari">
@@ -102,37 +100,37 @@ export function Progress(): React.JSX.Element {
       <p className="muted kecil">Kotak kuning = ada sesi hari itu.</p>
 
       <h2>Metrik toolbox</h2>
-      <div className="metrik">
-        <div className="kotak">
-          {transfer.penyebut === 0 ? (
-            <div className="angka-kosong">Belum ada</div>
-          ) : (
-            <div className="angka">{`${Math.round(transfer.rate * 100)}%`}</div>
-          )}
-          <p className="muted kecil">
-            Transfer rate: {transfer.pembilang} dari {transfer.penyebut}{' '}
-            framework sudah dipakai untuk masalah baru (90 hari terakhir).
-          </p>
-        </div>
-        <div className="kotak">
-          <div className="angka">{unikBulanIni}</div>
-          <p className="muted kecil">Framework unik dipakai bulan ini.</p>
-        </div>
-        <div className="kotak">
-          <div className="angka">{masalahAktif}</div>
-          <p className="muted kecil">Masalah sedang dikerjakan.</p>
-        </div>
-        <div className="kotak">
-          <div className="angka">{penyebaran}</div>
-          <p className="muted kecil">
-            Masalah yang sudah memakai 2 framework atau lebih.
-          </p>
-        </div>
+      <div className="baris-metrik">
+        <span>
+          Transfer rate
+          <span className="muted kecil">
+            {' '}
+            — {transfer.pembilang} dari {transfer.penyebut} framework sudah
+            dipakai untuk masalah baru (90 hari terakhir)
+          </span>
+        </span>
+        {transfer.penyebut === 0 ? (
+          <span className="angka-kosong">Belum ada</span>
+        ) : (
+          <span className="angka">{`${Math.round(transfer.rate * 100)}%`}</span>
+        )}
+      </div>
+      <div className="baris-metrik">
+        <span>Framework unik dipakai bulan ini</span>
+        <span className="angka">{unikBulanIni}</span>
+      </div>
+      <div className="baris-metrik">
+        <span>Masalah sedang dikerjakan</span>
+        <span className="angka">{masalahAktif}</span>
+      </div>
+      <div className="baris-metrik">
+        <span>Masalah yang sudah memakai 2 framework atau lebih</span>
+        <span className="angka">{penyebaran}</span>
       </div>
 
       <h2>Data</h2>
       {kelompokTerlewat.length > 0 && (
-        <div className="kartu">
+        <div className="kartu kartu-garis">
           <h2>Re-use terlewat</h2>
           <p>
             <strong>{totalTerlewat} re-use</strong> terlewat lebih dari 3 hari,
@@ -184,7 +182,9 @@ export function Progress(): React.JSX.Element {
           </div>
         ))}
       {semuaSesi.filter((s) => tujuhHari.includes(s.tanggal)).length === 0 && (
-        <p className="muted">Belum ada sesi dalam 7 hari terakhir.</p>
+        <div className="kosong">
+          <p className="muted">Belum ada sesi dalam 7 hari terakhir.</p>
+        </div>
       )}
     </div>
   );

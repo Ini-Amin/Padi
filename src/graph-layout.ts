@@ -171,11 +171,11 @@ export const GAYA_EDGE: Record<TipeEdge, GayaEdge> = {
 };
 
 /**
- * Batas zona legenda di dalam SVG (kiri bawah, di bawah baris ke-2
- * kolom A–D yang kosong karena tema-tema itu hanya punya 2–3 node).
- * Diverifikasi bebas edge oleh tes (tidak ada titik path di dalamnya);
- * legenda dirender di sini, bukan di bawah peta, supaya selalu terlihat
- * bersama peta. Ubah routing? Tes akan gagal bila ada edge yang masuk.
+ * Batas zona kiri bawah di dalam SVG (di bawah baris ke-2 kolom A–D
+ * yang kosong karena tema-tema itu hanya punya 2–3 node). Dulu zona
+ * legenda; sejak legenda pindah ke HTML di bawah peta, zona ini ruang
+ * kosong yang tetap diverifikasi bebas edge oleh tes (ruang putih
+ * diagram, bukan lubang untuk diisi).
  */
 export const BATAS_LEGENDA = { x0: 16, y0: 285, x1: 460, y1: 420 };
 

@@ -19,6 +19,7 @@ import { navigasi } from '../App';
 import { usePadiStore } from '../store';
 import { hariIni } from '../dates';
 import { useGerakanAktif } from '../gerakan';
+import { Ikon } from '../ikon';
 
 interface Props {
   masalah: Masalah;
@@ -117,11 +118,14 @@ export function Ranking({ masalah, frameworks, dipakaiIds, animasiMasuk = false 
     return (
       <div className="kartu">
         <h2>Framework yang cocok</h2>
-        <p>
-          {tanpaKriteria
-            ? 'Masalah ini belum punya kriteria, jadi Padi belum bisa mencocokkan framework. Jelajahi Peta untuk memilih framework sendiri.'
-            : 'Belum ada framework yang cocok dengan kriteria masalah ini. Coba nyatakan ulang masalahmu dengan kriteria yang berbeda, atau jelajahi Peta untuk melihat semua framework.'}
-        </p>
+        <div className="kosong">
+          <Ikon nama="cari" />
+          <p>
+            {tanpaKriteria
+              ? 'Masalah ini belum punya kriteria, jadi Padi belum bisa mencocokkan framework. Jelajahi Peta untuk memilih framework sendiri.'
+              : 'Belum ada framework yang cocok dengan kriteria masalah ini. Coba nyatakan ulang masalahmu dengan kriteria yang berbeda, atau jelajahi Peta untuk melihat semua framework.'}
+          </p>
+        </div>
         <div className="baris-tombol">
           <a className="tombol-garis" href="#/peta">
             Jelajahi Peta

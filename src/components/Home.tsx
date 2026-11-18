@@ -11,13 +11,11 @@ import { reuseJatuhTempo } from '../scheduler';
 import { modelCatchUp } from '../catchup';
 import { Ranking } from './Ranking';
 import { navigasi } from '../App';
-import { useJudulAnimasi } from '../gerakan';
 import type { Framework } from '../domain';
 
 export function Home(): React.JSX.Element {
   const masalahAktifId = usePadiStore((s) => s.masalahAktifId);
   const setSesiBerjalan = usePadiStore((s) => s.setSesiBerjalan);
-  const refJudul = useJudulAnimasi();
 
   const frameworks = useLiveQuery(() => db.frameworks.toArray(), []);
   const semuaMasalah = useLiveQuery(() => db.masalah.toArray(), []);
@@ -76,9 +74,7 @@ export function Home(): React.JSX.Element {
 
   return (
     <div>
-      <h1 ref={refJudul} className="judul-animasi">
-        Selamat belajar.
-      </h1>
+      <h1>Selamat belajar.</h1>
       <p className="muted">{formatTanggal(hariIni())}</p>
 
       {draftTerbaru && (
@@ -101,7 +97,7 @@ export function Home(): React.JSX.Element {
 
       {masalahAktif ? (
         <>
-          <div className="kartu">
+          <div className="kartu kartu-utama">
             <h2>{masalahAktif.judul}</h2>
             {masalahAktif.deskripsi && <p className="muted">{masalahAktif.deskripsi}</p>}
             <p className="kecil">
@@ -115,12 +111,6 @@ export function Home(): React.JSX.Element {
               <a className="tombol-teks" href="#/masalah">
                 Lihat semua masalah ({semuaMasalah.length})
               </a>
-              <a className="tombol-teks" href="#/masalah">
-                Ganti masalah
-              </a>
-              <a className="tombol-teks" href="#/masalah/baru">
-                Nyatakan masalah baru
-              </a>
             </div>
           </div>
 
@@ -131,7 +121,7 @@ export function Home(): React.JSX.Element {
           />
         </>
       ) : (
-        <div className="kartu">
+        <div className="kartu kartu-utama">
           <h2>Belum ada masalah aktif</h2>
           <p>
             Padi membantumu menyelesaikan masalah nyata dengan framework yang
@@ -150,12 +140,8 @@ export function Home(): React.JSX.Element {
       )}
 
       {kelompokCatchUp.length > 0 && (
-        <div className="kartu">
+        <div className="kartu kartu-garis">
           <h2>Re-use terlewat</h2>
-          <p className="muted kecil">
-            Re-use: memakai lagi framework yang sudah dipelajari, untuk
-            masalah lain.
-          </p>
           <p>
             <strong>{totalTerlewat} re-use</strong> terlewat lebih dari 3 hari,
             dikelompokkan jadi {kelompokCatchUp.length} sesi catch-up.
@@ -169,7 +155,7 @@ export function Home(): React.JSX.Element {
       )}
 
       {reuseHariIni.length > 0 && (
-        <div className="kartu">
+        <div className="kartu kartu-garis">
           <h2>Re-use hari ini</h2>
           <p className="muted kecil">
             Re-use: memakai lagi framework yang sudah dipelajari, untuk

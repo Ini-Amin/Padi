@@ -92,12 +92,69 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
     }
   };
 
+  /** Mulai sesi penerapan untuk masalah aktif (dipakai CTA atas + bawah). */
+  const pakaiUntukMasalahAktif = (): void => {
+    if (!masalahAktifId) return;
+    void (async () => {
+      const sesi = await mulaiSesi({
+        framework_id: id,
+        masalah_id: masalahAktifId,
+        jenis: 'penerapan',
+        durasi_target_menit: 45,
+      });
+      navigasi(`#/sesi/${sesi.id}`);
+    })();
+  };
+
+  /** Lompat ke bagian (tombol, bukan anchor: hash adalah rute app). */
+  const lompat = (bagian: string): void => {
+    document.getElementById(bagian)?.scrollIntoView();
+  };
+
+  const lompatKe: Array<[string, string]> = [
+    ['pemetaan', 'Pemetaan'],
+    ['prosedur', 'Prosedur'],
+    ['kesalahan', 'Kesalahan'],
+    ['syarat', 'Syarat'],
+  ];
+  if (artefak.length > 0) lompatKe.push(['artefak', 'Artefak']);
+  if (terkait.length > 0) lompatKe.push(['terkait', 'Terkait']);
+
+  const bisaPakai = masalahAktifId && framework.status !== 'disembunyikan';
+
+  const syaratBaris: Array<[boolean, string]> = [
+    [
+      syarat.transfer,
+      `Transfer: dipakai untuk ${jumlahMasalah} dari 2 masalah berbeda (skor ≥2).`,
+    ],
+    [
+      syarat.artefakBerkualitas,
+      'Artefak berkualitas: minimal 1 artefak yang lengkap + ada prioritasi + ada rekomendasi.',
+    ],
+    [
+      syarat.kemandirian,
+      'Kemandirian: menulis kapan framework ini salah alat.',
+    ],
+  ];
+
   return (
     <div>
       <a className="tombol-teks" href="#/peta">
         ← Kembali ke Peta
       </a>
       <h1>{framework.nama}</h1>
+      <nav className="lompat-nav" aria-label="Lompat ke bagian">
+        {lompatKe.map(([bagian, label]) => (
+          <button
+            key={bagian}
+            className="tombol-teks"
+            type="button"
+            onClick={() => lompat(bagian)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
       <p className="muted">
         Tema {framework.tema}: {NAMA_TEMA[framework.tema]} · Katalog #{framework.urutan_katalog}
       </p>
@@ -141,11 +198,23 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       </p>
       <p className="muted kecil">Sumber: {framework.sumber}</p>
 
-      <div className="kartu">
+      {bisaPakai && (
+        <div className="baris-tombol">
+          <button
+            className="tombol-utama"
+            type="button"
+            onClick={pakaiUntukMasalahAktif}
+          >
+            Pakai untuk masalah aktif (45&prime;)
+          </button>
+        </div>
+      )}
+
+      <div className="kartu" id="pemetaan">
         <h2>Pemetaan masalah: kapan dipakai</h2>
         <p>{framework.lapis_a_pemetaan}</p>
       </div>
-      <div className="kartu">
+      <div className="kartu" id="prosedur">
         <h2>Prosedur: cara memakai</h2>
         {langkahProsedur ? (
           <ol>
@@ -157,30 +226,24 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
           <p>{framework.lapis_b_prosedur}</p>
         )}
       </div>
-      <div className="kartu">
+      <div className="kartu" id="kesalahan">
         <h2>Kesalahan umum: kapan salah alat</h2>
         <p>{framework.lapis_c_kesalahan}</p>
       </div>
 
-      <div className="kartu">
+      <div className="strip-status" id="syarat">
         <h2>Syarat "dikuasai"</h2>
         <p className="muted kecil">
           Dikuasai berarti kamu bisa memakai framework ini dengan baik.
           Transfer: memakai framework yang sama untuk masalah yang berbeda.
         </p>
-        <p className={syarat.transfer ? 'teks-hijau' : ''}>
-          {syarat.transfer ? 'Terpenuhi' : 'Belum'}. Transfer: dipakai untuk{' '}
-          {jumlahMasalah} dari 2 masalah berbeda (skor ≥2).
-        </p>
-        <p className={syarat.artefakBerkualitas ? 'teks-hijau' : ''}>
-          {syarat.artefakBerkualitas ? 'Terpenuhi' : 'Belum'}. Artefak
-          berkualitas: minimal 1 artefak yang lengkap + ada prioritasi + ada
-          rekomendasi.
-        </p>
-        <p className={syarat.kemandirian ? 'teks-hijau' : ''}>
-          {syarat.kemandirian ? 'Terpenuhi' : 'Belum'}. Kemandirian: menulis
-          kapan framework ini salah alat.
-        </p>
+        {syaratBaris.map(([ok, teks]) => (
+          <div className="baris-legenda" key={teks}>
+            <span className={ok ? 'teks-hijau' : ''}>
+              {ok ? 'Terpenuhi' : 'Belum'}. {teks}
+            </span>
+          </div>
+        ))}
       </div>
 
       <div className="kartu">
@@ -212,7 +275,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       </div>
 
       {jadwal.length > 0 && (
-        <div className="kartu">
+        <div className="daftar-riwayat">
           <h2>Jadwal re-use</h2>
           {jadwal.map((j) => (
             <div className="baris-daftar" key={j.id}>
@@ -227,7 +290,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       )}
 
       {artefak.length > 0 && (
-        <div className="kartu">
+        <div className="daftar-riwayat" id="artefak">
           <h2>Artefak</h2>
           {artefak.map((a) => (
             <div key={a.id} className="artefak-item">
@@ -245,18 +308,20 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
       )}
 
       {masalahDipakai.length > 0 && (
-        <div className="kartu">
+        <div className="daftar-riwayat">
           <h2>Masalah yang pernah memakai framework ini</h2>
           {masalahDipakai.map((m) => (
-            <p key={m.id}>
-              <a href={`#/masalah/${m.id}`}>{m.judul}</a>
-            </p>
+            <div className="baris-daftar" key={m.id}>
+              <span>
+                <a href={`#/masalah/${m.id}`}>{m.judul}</a>
+              </span>
+            </div>
           ))}
         </div>
       )}
 
       {terkait.length > 0 && (
-        <div className="kartu">
+        <div className="daftar-riwayat" id="terkait">
           <h2>Framework terkait</h2>
           {[...terkaitPerFramework.entries()].map(([lainId, daftarEdge]) => {
             const lain = frameworkById.get(lainId);
@@ -264,38 +329,30 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
               .map((e) => e.alasan)
               .filter((a): a is string => a !== null);
             return (
-              <p key={lainId}>
-                <a href={`#/framework/${lainId}`}>{lain?.nama ?? lainId}</a>{' '}
-                {daftarEdge.map((e) => (
-                  <span key={e.tipe} className="lencana">
-                    {e.tipe.replaceAll('_', ' ')}
-                  </span>
-                ))}
-                {alasan.length > 0 && (
-                  <span className="muted">: {alasan.join('; ')}</span>
-                )}
-              </p>
+              <div className="baris-daftar" key={lainId}>
+                <span>
+                  <a href={`#/framework/${lainId}`}>{lain?.nama ?? lainId}</a>{' '}
+                  {daftarEdge.map((e) => (
+                    <span key={e.tipe} className="lencana">
+                      {e.tipe.replaceAll('_', ' ')}
+                    </span>
+                  ))}
+                  {alasan.length > 0 && (
+                    <span className="muted">: {alasan.join('; ')}</span>
+                  )}
+                </span>
+              </div>
             );
           })}
         </div>
       )}
 
       <div className="baris-tombol">
-        {masalahAktifId && framework.status !== 'disembunyikan' && (
+        {bisaPakai && (
           <button
             className="tombol-utama"
             type="button"
-            onClick={() => {
-              void (async () => {
-                const sesi = await mulaiSesi({
-                  framework_id: id,
-                  masalah_id: masalahAktifId,
-                  jenis: 'penerapan',
-                  durasi_target_menit: 45,
-                });
-                navigasi(`#/sesi/${sesi.id}`);
-              })();
-            }}
+            onClick={pakaiUntukMasalahAktif}
           >
             Pakai untuk masalah aktif (45&prime;)
           </button>

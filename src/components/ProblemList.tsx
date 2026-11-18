@@ -9,6 +9,7 @@ import { usePadiStore } from '../store';
 import { formatTanggal } from '../dates';
 import { navigasi } from '../App';
 import { useGerakanAktif } from '../gerakan';
+import { Ikon } from '../ikon';
 
 export function ProblemList(): React.JSX.Element {
   const semuaMasalah = useLiveQuery(() => db.masalah.toArray(), []);
@@ -45,9 +46,12 @@ export function ProblemList(): React.JSX.Element {
         </a>
       </div>
       {terurut.length === 0 && (
-        <p className="muted">
-          Belum ada masalah. Nyatakan satu masalah nyata untuk memulai.
-        </p>
+        <div className="kosong">
+          <Ikon nama="tambah" />
+          <p className="muted">
+            Belum ada masalah. Nyatakan satu masalah nyata untuk memulai.
+          </p>
+        </div>
       )}
       <div ref={refDaftar}>
         {terurut.map((m) => {

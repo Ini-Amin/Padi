@@ -1,8 +1,9 @@
 /* Padi: gaya visual (dokumen 04 §2).
  * Flat dan tipografis: satu keluarga sans-serif sistem, tanpa webfont,
  * tanpa gradien, tanpa bayangan tebal. Hierarki dari ukuran/berat tipografi.
- * Kuning #F5D90A hanya untuk aksi utama. Hijau hanya untuk status.
- * Tanpa emoji di dalam app.
+ * Kuning #F5D90A hanya untuk aksi utama + kotak hari aktif. Hijau hanya
+ * untuk status. Skala spasi: 4/8/12/16/24/32/48/64. Skala tipografi:
+ * 12/14/16/20/26/48. Tanpa emoji di dalam app.
  */
 
 :root {
@@ -36,7 +37,9 @@
     --border-kuat: #6b6b66;
     --hijau: #7ed957;
     --oranye: #ffb74d;
-    --kuning-status: #f5d90a;
+    /* Amber sendiri, BUKAN aksen #f5d90a: dot status "dipakai" harus
+     * terbedakan dari kuning aksi utama. */
+    --kuning-status: #d4a017;
     --abu: #8a8a8a;
     --abu-garis: #8a8a8a;
     --biru: #64b5f6;
@@ -71,7 +74,7 @@ textarea {
 }
 
 h1 {
-  font-size: 1.6rem;
+  font-size: 1.625rem;
   font-weight: 600;
   line-height: 1.25;
   margin: 0 0 0.5rem;
@@ -95,11 +98,11 @@ p {
 
 .muted {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .kecil {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 /* Teks yang hanya dibaca teknologi asistif (label, status non-warna). */
@@ -131,14 +134,15 @@ p {
   margin-bottom: 12px;
 }
 
-/* Skip link: tersembunyi sampai difokuskan keyboard. */
+/* Skip link: tersembunyi sampai difokuskan keyboard. Isi tinta (bukan
+ * aksen): kuning hanya untuk aksi utama + kotak hari aktif. */
 .lewati-konten {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--accent);
-  color: var(--accent-text);
-  padding: 10px 16px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 12px 16px;
   font-weight: 700;
   border-radius: 0 0 8px 0;
   z-index: 100;
@@ -165,14 +169,14 @@ p {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 20px 0 12px;
+  padding: 24px 0 12px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .merek {
-  font-size: 1.5rem;
+  font-size: 1.625rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   text-decoration: none;
@@ -185,10 +189,13 @@ p {
 }
 
 .nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   text-decoration: none;
-  padding: 11px 10px;
+  padding: 12px;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .nav a.aktif {
@@ -213,8 +220,22 @@ p {
   margin: 12px 0;
 }
 
-.kartu h2 {
+.kartu h2,
+.strip-status h2 {
   margin-top: 0;
+}
+
+/* Kartu objek utama halaman (masalah aktif di Beranda): dipakai bersama
+ * .kartu, hanya garis tepinya yang diperkuat jadi tinta 2px. */
+.kartu-utama {
+  border: 2px solid var(--text);
+}
+
+/* Kartu admin (re-use, catch-up): dipakai bersama .kartu, tanpa isi,
+ * padding lebih kecil — mundur dari objek utama halaman. */
+.kartu-garis {
+  background: transparent;
+  padding: 12px;
 }
 
 /* --- Tombol --- */
@@ -225,7 +246,7 @@ p {
   color: var(--accent-text);
   border: 1px solid var(--accent);
   border-radius: 8px;
-  padding: 12px 20px;
+  padding: 12px 24px;
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
@@ -253,7 +274,7 @@ p {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   cursor: pointer;
   text-decoration: none;
 }
@@ -276,7 +297,7 @@ p {
   border: none;
   color: var(--muted);
   cursor: pointer;
-  padding: 10px 4px;
+  padding: 12px 4px;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -309,7 +330,8 @@ select {
   color: var(--text);
   border: 1px solid var(--border-kuat);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px;
+  caret-color: var(--text);
 }
 
 textarea {
@@ -322,22 +344,24 @@ textarea {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 10px 12px;
-  margin: 0 6px 6px 0;
+  padding: 12px;
+  margin: 0 8px 8px 0;
   cursor: pointer;
   background: var(--card);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .chip:hover {
   border-color: var(--text);
 }
 
+/* Terpilih = garis tinta 2px + tebal, tanpa isi kuning: kuning hanya
+ * untuk aksi utama + kotak hari aktif. */
 .chip.terpilih {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
-  font-weight: 600;
+  background: var(--card);
+  border: 2px solid var(--text);
+  color: var(--text);
+  font-weight: 700;
 }
 
 .pilihan {
@@ -358,8 +382,8 @@ textarea {
 }
 
 .pilihan.terpilih {
-  border-color: var(--accent);
-  outline: 2px solid var(--accent);
+  border-color: var(--text);
+  outline: 2px solid var(--text);
   font-weight: 600;
 }
 
@@ -378,9 +402,9 @@ textarea {
 }
 
 .peringkat {
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  min-width: 28px;
+  min-width: 24px;
   text-align: center;
 }
 
@@ -390,7 +414,7 @@ textarea {
 
 .alasan {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   margin: 2px 0 0;
 }
 
@@ -402,7 +426,7 @@ textarea {
   letter-spacing: 0.05em;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 2px 8px;
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -414,7 +438,7 @@ textarea {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  margin-right: 6px;
+  margin-right: 8px;
   vertical-align: -1px;
 }
 
@@ -458,20 +482,20 @@ textarea {
 }
 
 .rubrik.terpilih {
-  border-color: var(--accent);
-  outline: 2px solid var(--accent);
+  border-color: var(--text);
+  outline: 2px solid var(--text);
 }
 
 .rubrik .skor {
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 /* --- Checklist --- */
 
 .cek {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
   padding: 8px 0;
   min-height: 44px;
@@ -481,7 +505,7 @@ textarea {
   margin-top: 4px;
   width: 18px;
   height: 18px;
-  accent-color: var(--accent);
+  accent-color: var(--text);
 }
 
 /* --- Daftar --- */
@@ -501,11 +525,11 @@ textarea {
 
 .lencana {
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 1px 8px;
-  margin-right: 6px;
+  padding: 2px 8px;
+  margin-right: 8px;
   white-space: nowrap;
 }
 
@@ -517,27 +541,30 @@ textarea {
 
 /* --- Progres --- */
 
-.metrik {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* Metrik sebagai baris berlabel (label kiri, angka kanan, dipisah garis
+ * rambut), bukan kotak hero. Angka tabular supaya tidak bergeser. */
+.baris-metrik {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   gap: 12px;
-  margin: 12px 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
 }
 
-.metrik .kotak {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px;
+.baris-metrik:first-of-type {
+  border-top: none;
 }
 
-.metrik .angka {
-  font-size: 1.6rem;
+.baris-metrik .angka {
+  font-size: 1.25rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* Nilai metrik yang belum ada (bukan nol): teks tenang, bukan angka besar. */
-.metrik .angka-kosong {
+.baris-metrik .angka-kosong {
   font-size: 1rem;
   font-weight: 400;
   color: var(--muted);
@@ -545,7 +572,7 @@ textarea {
 
 .grafik-hari {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   margin: 8px 0;
 }
 
@@ -582,7 +609,7 @@ textarea {
 
 .indikator-langkah {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   margin-bottom: 4px;
 }
 
@@ -608,6 +635,95 @@ pre.isi-artefak {
   margin: 8px 0;
 }
 
+/* Bar progres sesi: garis tipis di bawah timer, isi tinta (bukan
+ * aksen). Tick menandai batas tahap panduan (5/20/35 menit dari target
+ * 45 menit, posisi proporsional terhadap target). */
+.bar-progres-sesi {
+  position: relative;
+  max-width: 320px;
+  height: 4px;
+  margin: 12px auto 4px;
+  background: var(--border);
+  border-radius: 999px;
+}
+
+.bar-progres-isi {
+  height: 100%;
+  background: var(--text);
+  border-radius: inherit;
+}
+
+.bar-progres-tick {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 8px;
+  background: var(--border-kuat);
+}
+
+/* --- Detail framework: grup visual + jump-nav --- */
+
+/* STATUS: strip checklist, bukan kartu — garis rambut atas-bawah. */
+.strip-status {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  margin: 12px 0;
+}
+
+/* HISTORY: daftar polos dipisah garis rambut, tanpa kotak kartu. */
+.daftar-riwayat {
+  margin: 12px 0;
+}
+
+.daftar-riwayat > .artefak-item {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  margin-bottom: 0;
+}
+
+/* Bagian berjangkar (jump-nav): jangan tertutup header sticky saat
+ * dilompati. */
+.kartu[id],
+.strip-status[id],
+.daftar-riwayat[id] {
+  scroll-margin-top: 80px;
+}
+.lompat-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+/* --- Ikon inline (Hugeicons, 24px, stroke 1.5, currentColor) --- */
+
+.ikon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+
+.nav .ikon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Ikon kecil di tautan teks (mis. panah "Lihat semua masalah"). */
+/* Empty state: ikon redup di atas teks, tengah. */
+.kosong {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.kosong .ikon {
+  display: block;
+  margin: 0 auto 8px;
+  color: var(--muted);
+}
+
 /* --- Peta (graph SVG) --- */
 
 /* SVG menyesuaikan lebar wadah (tanpa lebar minimum): tidak pernah ada
@@ -622,6 +738,50 @@ pre.isi-artefak {
   margin: 12px 0;
 }
 
+/* Panduan baca mono-kapital yang menjelaskan enkoding garis peta. */
+.panduan-peta {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+/* Legenda HTML di bawah peta (bukan di dalam SVG): tetap terlihat di
+ * bawah 804px saat SVG disembunyikan. Garis rambut di atasnya. */
+.legenda-peta {
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+  padding-top: 12px;
+}
+
+.baris-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin: 8px 0;
+  font-size: 0.875rem;
+}
+
+.baris-legenda .contoh-garis {
+  flex: none;
+  align-self: center;
+}
+
+/* Teks baris legenda mengisi sisa lebar (di 390px ia membungkus di
+ * samping swatch, bukan jatuh ke baris baru sendirian). */
+.baris-legenda > svg + span {
+  flex: 1;
+}
+
+/* Baris legenda yang tipenya tidak tampil: meredup, tapi tetap
+ * terbaca (bukan hilang) supaya user tahu ada yang disembunyikan. */
+.peta-legenda-redup {
+  opacity: 0.45;
+}
+
 /* Toggle relasi satu tema (checkbox native di atas peta). */
 .peta-toggle {
   display: flex;
@@ -634,12 +794,6 @@ pre.isi-artefak {
 
 .peta-toggle input {
   accent-color: var(--text);
-}
-
-/* Baris legenda yang tipenya tidak tampil: meredup, tapi tetap
- * terbaca (bukan hilang) supaya user tahu ada yang disembunyikan. */
-.peta-legenda-redup {
-  opacity: 0.45;
 }
 
 .peta-svg {
@@ -715,7 +869,9 @@ pre.isi-artefak {
 }
 
 /* Legenda hidup di dalam SVG (zona mati kiri bawah), satu tingkat lebih
- * kecil dari label node, label tebal + deskripsi redup. */
+ * kecil dari label node, label tebal + deskripsi redup. Dipakai
+ * ringkasan progres (BATAS_PROGRES); legenda garis/status kini HTML
+ * di bawah peta (.legenda-peta). */
 .peta-legenda-teks {
   font-size: 12px;
   fill: var(--text);
@@ -731,20 +887,37 @@ pre.isi-artefak {
   display: none;
 }
 
-/* --- Judul beranimasi (Paket 3: pemecah huruf vanilla, huruf muncul berurutan) --- */
+/* --- Permukaan browser --- */
 
-.judul-animasi .huruf {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(0.25em);
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+::selection {
+  background: var(--accent);
+  color: var(--accent-text);
 }
 
-.judul-animasi.jalan .huruf {
-  opacity: 1;
-  transform: translateY(0);
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* Node peta memakai garis tinta pada kotaknya saat fokus (bukan
+ * outline, supaya tidak ganda dengan bahasa garis sorot/pilih). */
+.peta-node:focus-visible {
+  outline: none;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-kuat) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-kuat);
+  border-radius: 8px;
 }
 
 /* --- Responsif --- */
@@ -775,27 +948,15 @@ pre.isi-artefak {
   }
 }
 
-/* Mobile: navigasi bawah (dokumen 04 §2), skala tipografi lebih kecil. */
+/* Mobile: navigasi bawah (dokumen 04 §2). Ikon di atas label. */
 @media (max-width: 560px) {
   .pembungkus {
     padding-bottom: 110px;
   }
 
   .kepala {
-    padding: 16px 0 10px;
+    padding: 16px 0 8px;
     margin-bottom: 16px;
-  }
-
-  h1 {
-    font-size: 1.35rem;
-  }
-
-  .timer {
-    font-size: 2.4rem;
-  }
-
-  .kartu {
-    padding: 14px;
   }
 
   .nav {
@@ -807,28 +968,19 @@ pre.isi-artefak {
     justify-content: space-around;
     background: var(--card);
     border-top: 1px solid var(--border);
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .nav a {
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 4px;
+    font-size: 0.75rem;
   }
 }
 
-/* Metrik 2 kolom menjadi 1 kolom di layar sangat sempit. */
-@media (max-width: 480px) {
-  .metrik {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Hormati permintaan tanpa gerakan: semua transisi/animasi dimatikan. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .judul-animasi .huruf {
-    opacity: 1;
-    transform: none;
-  }
-}
+/* Hormati permintaan tanpa gerakan: tidak ada animasi CSS dekoratif
+ * yang tersisa (reveal huruf dihapus bersama pemecah hurufnya); animasi
+ * JS (GSAP/AutoAnimate) dimatikan hook useGerakanAktif. Transisi umpan
+ * balik (hover/fokus, redup peta) dipertahankan — semuanya instan atau
+ * di bawah 300ms dan membawa informasi status. */

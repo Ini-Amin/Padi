@@ -180,6 +180,7 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
 
   const targetDetik = sesi.durasi_target_menit * 60;
   const elapsed = elapsedDetik ?? 0;
+  const persenSesi = Math.min(100, (elapsed / targetDetik) * 100);
   const sisa = Math.max(0, targetDetik - (elapsedDetik ?? 0));
   const menit = Math.floor(sisa / 60);
   const detik = sisa % 60;
@@ -486,6 +487,27 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
 
       <div className="timer">
         {String(menit).padStart(2, '0')}:{String(detik).padStart(2, '0')}
+      </div>
+      {/* Bar progres: garis tipis di bawah timer. Sesi penerapan
+        mendapat tick di batas tahap panduan (5/20/35 menit); jenis
+        lain bar polos. */}
+      <div
+        className="bar-progres-sesi"
+        role="progressbar"
+        aria-label={`Progres sesi: ${Math.round(persenSesi)}%`}
+        aria-valuenow={Math.round(persenSesi)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="bar-progres-isi" style={{ width: `${persenSesi}%` }} />
+        {sesi.jenis === 'penerapan' &&
+          [5, 20, 35].map((m) => (
+            <span
+              key={m}
+              className="bar-progres-tick"
+              style={{ left: `${((m * 60) / targetDetik) * 100}%` }}
+            />
+          ))}
       </div>
       <p className="muted tengah">
         {waktuHabis

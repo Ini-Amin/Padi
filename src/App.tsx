@@ -20,6 +20,7 @@ import { FrameworkDetail } from './components/FrameworkDetail';
 import { CatchUp } from './components/CatchUp';
 import { Progress } from './components/Progress';
 import { Onboarding } from './components/Onboarding';
+import { Ikon } from './ikon';
 
 export type Route =
   | { nama: 'beranda' }
@@ -132,15 +133,19 @@ export function App(): React.JSX.Element {
         </a>
         <nav className="nav">
           <a href="#/" className={aktif('beranda')}>
+            <Ikon nama="beranda" />
             Beranda
           </a>
           <a href="#/peta" className={aktif('peta')}>
+            <Ikon nama="peta" />
             Peta
           </a>
           <a href="#/masalah" className={aktif('masalah')}>
+            <Ikon nama="masalah" />
             Masalah
           </a>
           <a href="#/progres" className={aktif('progres')}>
+            <Ikon nama="progres" />
             Progres
           </a>
         </nav>
