@@ -2,13 +2,15 @@
  * Shell app + router hash sederhana (dokumen 05 §2: tanpa lazy loading
  * di MVP). Rute didefinisikan di tipe `Route` dan `parseHash` di bawah.
  *
- * Gate first-run (PRD M0 revisi 17 Nov 2026): sebelum onboarding selesai,
- * SEMUA rute diganti layar onboarding problem-first. User yang sudah
- * selesai tidak pernah dipaksa mengulang.
+ * TIDAK ADA gate first-run sejak 20 Nov 2026: semua rute langsung bisa
+ * dibuka, termasuk dengan profil kosong (Beranda menampilkan form entri
+ * masalah tertanam bila belum ada masalah aktif). Rute #/onboarding
+ * tetap ada untuk pengulangan manual. Field `onboarding.selesai` di
+ * store dipertahankan (format persist tidak berubah) tapi tidak lagi
+ * mengunci rute apa pun.
  */
 import { useEffect, useState } from 'react';
 import { seedDatabase, tandaiReuseTerlewat } from './db';
-import { usePadiStore } from './store';
 import { Home } from './components/Home';
 import { ProblemFlow } from './components/ProblemFlow';
 import { ProblemDetail } from './components/ProblemDetail';
@@ -82,7 +84,6 @@ export function App(): React.JSX.Element {
   const route = useRoute();
   const [siap, setSiap] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const onboardingSelesai = usePadiStore((s) => s.onboarding.selesai);
 
   useEffect(() => {
     let batal = false;
@@ -165,11 +166,10 @@ export function App(): React.JSX.Element {
         ) : !siap ? (
           <p className="muted">Memuat…</p>
         ) : route.nama === 'onboarding' ? (
-          // Pengulangan eksplisit dari layar Progres: selalu tampil, apa pun
-          // status gate (tidak mengunci apa pun di baliknya).
+          // Pengulangan eksplisit dari layar Progres (atau kunjungan
+          // langsung ke #/onboarding): selalu tampil, tidak mengunci
+          // apa pun di baliknya.
           <Onboarding ulang />
-        ) : !onboardingSelesai ? (
-          <Onboarding />
         ) : (
           <>
             {route.nama === 'beranda' && <Home />}

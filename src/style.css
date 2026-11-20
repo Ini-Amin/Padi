@@ -1,51 +1,41 @@
 /* Padi: gaya visual (dokumen 04 §2).
- * Flat dan tipografis: satu keluarga sans-serif sistem, tanpa webfont,
- * tanpa gradien, tanpa bayangan tebal. Hierarki dari ukuran/berat tipografi.
- * Kuning #F5D90A hanya untuk aksi utama + kotak hari aktif. Hijau hanya
- * untuk status. Skala spasi: 4/8/12/16/24/32/48/64. Skala tipografi:
- * 12/14/16/20/26/48. Tanpa emoji di dalam app.
+ * Dark tactile utility (Linear / instrumen presisi): latar grafit pekat,
+ * permukaan kartu selangkah lebih terang, garis 1px tegas, aksen sage
+ * mint yang tenang. DARK-ONLY — tidak ada varian terang. Satu keluarga
+ * grotesk sistem (Inter/Geist bila terpasang, tanpa webfont), mono
+ * untuk label utilitas. Tanpa gradien, tanpa bayangan tebal; hierarki
+ * dari ukuran/berat tipografi dan garis. Skala spasi: 4/8/12/16/24/32/
+ * 48/64. Skala tipografi: 12/14/16/20/26/48. Tanpa emoji di dalam app.
+ *
+ * Aksen #4ade80 (mint) hanya untuk: aksi utama, status aktif/terpilih,
+ * isi bar progres, dan ring fokus. Status framework memakai amber
+ * (#fbbf24, "dipakai") agar tetap terbedakan dari aksen. Garis
+ * prasyarat di Peta memakai putih terang netral (--prasyarat), bukan
+ * hijau: seri utama dibedakan oleh bentuk (2px solid + panah) dan
+ * kecerahan, sehingga hijau mint tidak dipakai dua peran sekaligus.
  */
 
 :root {
-  color-scheme: light dark;
-  --bg: #fbfbf8;
-  --card: #ffffff;
-  --text: #0d0d0b;
-  --muted: #6b6b66;
-  --border: #e0e0da;
-  --border-kuat: #8a8a8a;
-  --accent: #f5d90a;
-  --accent-text: #0d0d0b;
-  --hijau: #2e7d32;
-  --oranye: #bf360c;
-  --kuning-status: #7d6608;
-  --abu: #8a8a8a;
-  --abu-garis: #6b6b66;
-  --biru: #1565c0;
-  --merah: #c62828;
-  --peta-kotak: #f4f4ef;
-  --radius: 10px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #121212;
-    --card: #1c1c1c;
-    --text: #edede8;
-    --muted: #a8a8a0;
-    --border: #2a2a2a;
-    --border-kuat: #6b6b66;
-    --hijau: #7ed957;
-    --oranye: #ffb74d;
-    /* Amber sendiri, BUKAN aksen #f5d90a: dot status "dipakai" harus
-     * terbedakan dari kuning aksi utama. */
-    --kuning-status: #d4a017;
-    --abu: #8a8a8a;
-    --abu-garis: #8a8a8a;
-    --biru: #64b5f6;
-    --merah: #ef9a9a;
-    --peta-kotak: #242424;
-  }
+  color-scheme: dark;
+  --bg: #0c0d0e;
+  --card: #14171a;
+  --text: #f3f4f6;
+  --muted: #9ca3af;
+  --border: #23272d;
+  --border-kuat: #3a4048;
+  --accent: #4ade80;
+  --accent-kuat: #22c55e;
+  --accent-text: #0c0d0e;
+  --hijau: #4ade80;
+  --oranye: #fb923c;
+  --amber: #fbbf24;
+  --abu: #6b7280;
+  --abu-garis: #6b7280;
+  --biru: #60a5fa;
+  --merah: #f87171;
+  --peta-kotak: #1a1e22;
+  --prasyarat: #f3f4f6;
+  --radius: 8px;
 }
 
 * {
@@ -56,7 +46,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: Inter, "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.55;
 }
@@ -77,18 +67,21 @@ h1 {
   font-size: 1.625rem;
   font-weight: 600;
   line-height: 1.25;
+  letter-spacing: -0.02em;
   margin: 0 0 0.5rem;
 }
 
 h2 {
   font-size: 1.25rem;
   font-weight: 600;
+  letter-spacing: -0.015em;
   margin: 1.5rem 0 0.5rem;
 }
 
 h3 {
   font-size: 1rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   margin: 1.25rem 0 0.4rem;
 }
 
@@ -134,8 +127,8 @@ p {
   margin-bottom: 12px;
 }
 
-/* Skip link: tersembunyi sampai difokuskan keyboard. Isi tinta (bukan
- * aksen): kuning hanya untuk aksi utama + kotak hari aktif. */
+/* Skip link: tersembunyi sampai difokuskan keyboard. Isi terang
+ * terbalik (bukan aksen): aksen hanya untuk aksi utama + status aktif. */
 .lewati-konten {
   position: absolute;
   left: -9999px;
@@ -198,10 +191,15 @@ p {
   font-size: 1rem;
 }
 
+.nav a:hover {
+  background: var(--card);
+}
+
 .nav a.aktif {
   background: var(--card);
   border: 1px solid var(--border);
   font-weight: 700;
+  color: var(--accent);
 }
 
 .kaki {
@@ -226,7 +224,7 @@ p {
 }
 
 /* Kartu objek utama halaman (masalah aktif di Beranda): dipakai bersama
- * .kartu, hanya garis tepinya yang diperkuat jadi tinta 2px. */
+ * .kartu, hanya garis tepinya yang diperkuat jadi 2px terang. */
 .kartu-utama {
   border: 2px solid var(--text);
 }
@@ -254,11 +252,12 @@ p {
 }
 
 .tombol-utama:not(:disabled):hover {
-  filter: brightness(0.92);
+  background: var(--accent-kuat);
+  border-color: var(--accent-kuat);
 }
 
 .tombol-utama:not(:disabled):active {
-  filter: brightness(0.85);
+  filter: brightness(0.9);
 }
 
 .tombol-utama:disabled {
@@ -280,11 +279,12 @@ p {
 }
 
 .tombol-garis:not(:disabled):hover {
-  border-color: var(--text);
+  border-color: var(--border-kuat);
+  background: var(--card);
 }
 
 .tombol-garis:not(:disabled):active {
-  background: var(--card);
+  background: var(--peta-kotak);
 }
 
 .tombol-garis:disabled {
@@ -339,6 +339,22 @@ textarea {
   resize: vertical;
 }
 
+/* Textarea masalah onboarding: scratchpad fokus — lebih lapang dari
+ * textarea biasa, permukaan kartu, border kuat yang menyala aksen
+ * saat fokus. */
+.scratchpad {
+  min-height: 140px;
+  background: var(--card);
+  border: 1px solid var(--border-kuat);
+  padding: 16px;
+  line-height: 1.6;
+}
+
+.scratchpad:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+
 .chip {
   display: inline-block;
   color: var(--text);
@@ -352,14 +368,14 @@ textarea {
 }
 
 .chip:hover {
-  border-color: var(--text);
+  border-color: var(--border-kuat);
+  background: var(--peta-kotak);
 }
 
-/* Terpilih = garis tinta 2px + tebal, tanpa isi kuning: kuning hanya
- * untuk aksi utama + kotak hari aktif. */
+/* Terpilih = garis aksen 2px + tebal. Aksen mint menandai status aktif. */
 .chip.terpilih {
   background: var(--card);
-  border: 2px solid var(--text);
+  border: 2px solid var(--accent);
   color: var(--text);
   font-weight: 700;
 }
@@ -378,13 +394,42 @@ textarea {
 }
 
 .pilihan:hover {
-  border-color: var(--text);
+  border-color: var(--border-kuat);
+  background: var(--peta-kotak);
 }
 
 .pilihan.terpilih {
-  border-color: var(--text);
-  outline: 2px solid var(--text);
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
   font-weight: 600;
+}
+
+/* Akordeon utilitas (kriteria opsional onboarding): <details> native,
+ * tertutup default. Summary memakai label mono-kapital; isi dibatasi
+ * garis rambut atas saat terbuka. */
+.akordeon-utilitas {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+.akordeon-utilitas summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.akordeon-utilitas summary:hover {
+  color: var(--text);
+}
+
+.akordeon-utilitas .isi-akordeon {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
 }
 
 /* --- Ranking matching --- */
@@ -420,6 +465,7 @@ textarea {
 
 .label-eksplorasi {
   display: inline-block;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -445,8 +491,8 @@ textarea {
 .dot-status.abu-abu {
   background: var(--abu);
 }
-.dot-status.kuning {
-  background: var(--kuning-status);
+.dot-status.amber {
+  background: var(--amber);
 }
 .dot-status.hijau {
   background: var(--hijau);
@@ -481,9 +527,14 @@ textarea {
   cursor: pointer;
 }
 
+.rubrik:hover {
+  border-color: var(--border-kuat);
+  background: var(--peta-kotak);
+}
+
 .rubrik.terpilih {
-  border-color: var(--text);
-  outline: 2px solid var(--text);
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
 }
 
 .rubrik .skor {
@@ -505,7 +556,7 @@ textarea {
   margin-top: 4px;
   width: 18px;
   height: 18px;
-  accent-color: var(--text);
+  accent-color: var(--accent);
 }
 
 /* --- Daftar --- */
@@ -525,6 +576,7 @@ textarea {
 
 .lencana {
   display: inline-block;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -599,17 +651,20 @@ textarea {
 
 .hari.aktif .kotak-hari {
   background: var(--accent);
-  /* Pembeda bukan warna: border 2px gelap (teks) vs 1px abu-abu pada hari
-   * tidak aktif. Isi kuning vs abu-abu hanya 1,07:1 di mode terang, jadi
-   * border + label tebal yang membedakan, bukan isi. */
+  /* Pembeda bukan warna saja: border 2px terang vs 1px abu-abu pada
+   * hari tidak aktif — isi mint vs permukaan hanya dibedakan border +
+   * label tebal. */
   border: 2px solid var(--text);
 }
 
 /* --- Langkah flow --- */
 
 .indikator-langkah {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: 4px;
 }
 
@@ -635,8 +690,8 @@ pre.isi-artefak {
   margin: 8px 0;
 }
 
-/* Bar progres sesi: garis tipis di bawah timer, isi tinta (bukan
- * aksen). Tick menandai batas tahap panduan (5/20/35 menit dari target
+/* Bar progres sesi: garis tipis di bawah timer, isi aksen mint.
+ * Tick menandai batas tahap panduan (5/20/35 menit dari target
  * 45 menit, posisi proporsional terhadap target). */
 .bar-progres-sesi {
   position: relative;
@@ -649,7 +704,7 @@ pre.isi-artefak {
 
 .bar-progres-isi {
   height: 100%;
-  background: var(--text);
+  background: var(--accent);
   border-radius: inherit;
 }
 
@@ -676,7 +731,7 @@ pre.isi-artefak {
 /* --- Panduan sesi interaktif: accordion 4 tahap sinkron timer --- */
 
 /* Satu tahap: kartu kecil di dalam kartu panduan. Tahap berjalan
- * berborder tinta 2px (bahasa kartu-utama) + lencana "Tahap ini". */
+ * berborder aksen 2px + lencana "Tahap ini". */
 .tahap-panduan {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -686,7 +741,7 @@ pre.isi-artefak {
 }
 
 .tahap-panduan.saat-ini {
-  border: 2px solid var(--text);
+  border: 2px solid var(--accent);
 }
 
 .tahap-panduan summary {
@@ -808,7 +863,7 @@ pre.isi-artefak {
 
 /* Panduan baca mono-kapital yang menjelaskan enkoding garis peta. */
 .panduan-peta {
-  font-family: ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -861,7 +916,7 @@ pre.isi-artefak {
 }
 
 .peta-toggle input {
-  accent-color: var(--text);
+  accent-color: var(--accent);
 }
 
 .peta-svg {
@@ -881,10 +936,9 @@ pre.isi-artefak {
   fill: var(--muted);
 }
 
-/* Kotak node terangkat satu tingkat dari wadah peta (light: selangkah
- * lebih gelap, dark: selangkah lebih terang) dengan garis tepi abu
- * (3,13:1 light / 4,71:1 dark terhadap isi kotak), bukan isi dan garis
- * yang sama dengan wadah. */
+/* Kotak node terangkat satu tingkat dari wadah peta (selangkah lebih
+ * terang) dengan garis tepi abu (~3,4:1 terhadap isi kotak), bukan
+ * isi dan garis yang sama dengan wadah. */
 .peta-kotak {
   fill: var(--peta-kotak);
   stroke: var(--abu);
@@ -892,11 +946,10 @@ pre.isi-artefak {
 }
 
 /* Sorot (hover/tetangga), fokus keyboard, dan pilihan memakai satu
- * bahasa garis yang sama: garis teks, bukan aksen kuning. Aksen hanya
- * 1,42:1 di atas putih (gagal 3:1 untuk ring fokus) dan menurut
- * komentar kepala file ini kuning hanya untuk aksi utama; garis teks
- * ~19:1 (light) / ~15:1 (dark). Pilihan tetap terbedakan dari hover
- * oleh strip di bawah peta dan node lain yang meredup. */
+ * bahasa garis yang sama: garis terang, bukan aksen. Aksen mint
+ * dicadangkan untuk aksi + status aktif di luar peta; di dalam peta,
+ * garis terang ~15:1 terhadap latar. Pilihan tetap terbedakan dari
+ * hover oleh strip di bawah peta dan node lain yang meredup. */
 .peta-node:hover .peta-kotak,
 .peta-node:focus-visible .peta-kotak,
 .peta-node.sorot .peta-kotak,
@@ -963,11 +1016,11 @@ pre.isi-artefak {
 }
 
 :focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* Node peta memakai garis tinta pada kotaknya saat fokus (bukan
+/* Node peta memakai garis terang pada kotaknya saat fokus (bukan
  * outline, supaya tidak ganda dengan bahasa garis sorot/pilih). */
 .peta-node:focus-visible {
   outline: none;

@@ -158,7 +158,7 @@ export function GraphSvg(): React.JSX.Element {
         garis tebal = prasyarat
       </h2>
       <p className="panduan-peta">
-        Prasyarat = garis tebal hijau berpanah · kolom = tema · klik node
+        Prasyarat = garis tebal terang berpanah · kolom = tema · klik node
         untuk memilih
       </p>
       {modeJalur && jalur !== null && (
@@ -197,7 +197,7 @@ export function GraphSvg(): React.JSX.Element {
               markerHeight={LEBAR_MARKER_PANAH}
               orient="auto-start-reverse"
             >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--hijau)" />
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--prasyarat)" />
             </marker>
             {/* Marker kecil untuk panah pendek (12px): segitiga 8px,
                 bukan 14px, supaya batangnya terlihat di atas segitiga. */}
@@ -210,7 +210,7 @@ export function GraphSvg(): React.JSX.Element {
               markerHeight={LEBAR_MARKER_PANAH_KECIL}
               orient="auto-start-reverse"
             >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--hijau)" />
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--prasyarat)" />
             </marker>
           </defs>
 
@@ -403,7 +403,7 @@ export function GraphSvg(): React.JSX.Element {
         <div className="baris-legenda">
           <span>Status:</span>
           <span>
-            <span className="dot-status kuning" /> dipakai
+            <span className="dot-status amber" /> dipakai
           </span>
           <span>
             <span className="dot-status hijau" /> dikuasai

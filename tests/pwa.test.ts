@@ -58,9 +58,9 @@ describe('manifest.webmanifest', () => {
     expect(manifest.display).toBe('standalone');
   });
 
-  it('warna tema = kuning aksen app, latar = warna latar app', () => {
-    expect(manifest.theme_color).toBe('#F5D90A');
-    expect(manifest.background_color).toBe('#FBFBF8');
+  it('warna tema = mint aksen app, latar = warna latar app', () => {
+    expect(manifest.theme_color).toBe('#4ade80');
+    expect(manifest.background_color).toBe('#0c0d0e');
   });
 
   it('menyediakan ikon PNG 192 dan 512 + maskable + SVG, semua src relatif', () => {

@@ -217,7 +217,7 @@ describe('GraphSvg: legenda HTML di bawah peta, klaim + panduan di atas', () => 
     expect(html).toContain('22 framework dalam 7 tema');
     expect(html).toContain('garis tebal = prasyarat');
     expect(html).toContain('class="panduan-peta"');
-    expect(html).toContain('Prasyarat = garis tebal hijau berpanah');
+    expect(html).toContain('Prasyarat = garis tebal terang berpanah');
     expect(html.indexOf('panduan-peta')).toBeLessThan(html.indexOf('<svg'));
   });
 

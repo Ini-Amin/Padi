@@ -247,9 +247,9 @@ describe('Progress: log sesi ber-nama + metrik tenang + legenda hari', () => {
     expect(html).not.toContain('<div class="angka">Belum ada</div>');
   });
 
-  it('grafik 7 hari menjelaskan arti kotak kuning', async () => {
+  it('grafik 7 hari menjelaskan arti kotak hijau', async () => {
     const html = await render();
-    expect(html).toContain('Kotak kuning = ada sesi hari itu.');
+    expect(html).toContain('Kotak hijau = ada sesi hari itu.');
   });
 });
 

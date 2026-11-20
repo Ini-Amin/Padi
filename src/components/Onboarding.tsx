@@ -3,11 +3,16 @@
  * adalah menyatakan satu masalah nyata. Padi langsung menunjukkan 3
  * framework yang cocok, lalu user masuk sesi 45 menit pertama.
  *
- * Langkah 0: textarea masalah + contoh yang bisa diklik + kriteria (pilih
- * minimal satu, agar matcher punya bahan). Langkah 1: ranking 3 framework
- * untuk masalah yang baru dibuat.
+ * Langkah 0: textarea masalah + contoh yang bisa diklik. Kriteria TIDAK
+ * lagi wajib dicentang manual: ditebak otomatis dari teks (inferKriteria)
+ * dan digabung dengan centang manual di akordeon opsional (tertutup
+ * default). Langkah 1: ranking 3 framework untuk masalah yang baru dibuat.
  * "Lewati" menandai onboarding selesai tanpa masalah (Beranda kosong).
  * Mode `ulang` (dari Progres): menyatakan masalah baru, tanpa gate.
+ * Mode `embedded` (di Beranda saat belum ada masalah aktif): hanya form
+ * langkah 0, tanpa indikator langkah dan tanpa Lewati/Batalkan; setelah
+ * simpan, form menghilang dan Beranda menampilkan masalah aktif +
+ * ranking (tanpa navigasi, tanpa reload).
  */
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -22,6 +27,7 @@ import {
   profilSelesai,
   type JawabanOnboarding,
 } from '../onboarding';
+import { gabungKriteria, inferKriteria } from '../inferKriteria';
 import { Ranking } from './Ranking';
 import { navigasi } from '../App';
 import { useGerakanAktif } from '../gerakan';
@@ -44,7 +50,13 @@ const CONTOH_MASALAH = [
   'Saya ragu mengambil keputusan karena datanya tidak lengkap.',
 ];
 
-export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.Element {
+export function Onboarding({
+  ulang = false,
+  embedded = false,
+}: {
+  ulang?: boolean;
+  embedded?: boolean;
+}): React.JSX.Element {
   const profilTersimpan = usePadiStore((s) => s.onboarding);
   const setOnboarding = usePadiStore((s) => s.setOnboarding);
   const setMasalahAktif = usePadiStore((s) => s.setMasalahAktif);
@@ -67,6 +79,12 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
   // tidak aktif. (GSAP dihapus 18 Nov 2026: satu-satunya pemakaian
   // adalah transisi ini + stagger Ranking — keduanya setara di CSS.)
 
+  // Tebakan kriteria dari teks (dihitung ulang tiap ketikan; murah —
+  // hanya regex batas kata). Ditampilkan sebagai petunjuk, bukan
+  // sebagai pilihan: yang disimpan adalah gabungan tebakan + centang
+  // manual (lihat lihatCocok).
+  const tebakan = masalah.trim().length > 0 ? inferKriteria(masalah) : [];
+
   const toggleKriteria = (k: KriteriaMasalah): void => {
     setKriteria((sebelum) => {
       const berikut = new Set(sebelum);
@@ -88,14 +106,24 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
     navigasi('#/');
   };
 
-  /** Buat masalah, tandai onboarding selesai, tampilkan ranking. */
+  /**
+   * Buat masalah dari teks + kriteria gabungan (tebakan + centang
+   * manual), tandai onboarding selesai, jadikan masalah aktif.
+   * Mode embedded: selesai sampai di sini — Beranda me-render ulang
+   * dan form menghilang (masalah aktif + ranking tampil). Mode
+   * standalone: lanjut ke langkah 1 (ranking untuk masalah baru).
+   * Guard bolehSelesaikan dilonggarkan di mode embedded seperti di
+   * mode ulang: user yang sudah pernah onboarding tapi tidak punya
+   * masalah aktif (mis. semua masalah diarsipkan) tetap harus bisa
+   * menyatakan masalah baru dari Beranda.
+   */
   const lihatCocok = async (): Promise<void> => {
     const teksMasalah = masalah.trim();
-    if (teksMasalah.length === 0 || menyimpan || kriteria.size === 0) return;
-    if (!bolehSelesaikan(profilTersimpan, ulang)) return;
+    if (teksMasalah.length === 0 || menyimpan) return;
+    if (!bolehSelesaikan(profilTersimpan, ulang || embedded)) return;
     const jawaban: JawabanOnboarding = {
       masalah: teksMasalah,
-      kriteria: [...kriteria],
+      kriteria: gabungKriteria(inferKriteria(teksMasalah), kriteria),
     };
     setMenyimpan(true);
     try {
@@ -105,6 +133,7 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
         profilSelesai(jawaban, { masalahId: hasil.masalah.id }, hariIni()),
       );
       setMasalahAktif(hasil.masalah.id);
+      if (embedded) return;
       setMasalahBaru(hasil.masalah);
       setLangkah(1);
     } finally {
@@ -140,12 +169,18 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
     );
   }
 
+  const judul = embedded ? (
+    <h2>Masalah apa yang sedang kamu hadapi?</h2>
+  ) : (
+    <h1>Masalah apa yang sedang kamu hadapi?</h1>
+  );
+
   return (
     <div key={langkah} className={gerakanAktif ? 'langkah-masuk' : undefined}>
-      <p className="indikator-langkah">Langkah 1 dari 2: masalahmu</p>
-      <h1>
-        Masalah apa yang sedang kamu hadapi?
-      </h1>
+      {!embedded && (
+        <p className="indikator-langkah">Langkah 1 dari 2: masalahmu</p>
+      )}
+      {judul}
       <p className="muted">
         Satu kalimat cukup. Padi akan mencocokkan masalahmu dengan framework
         yang tepat, lalu kamu langsung menerapkannya dalam satu sesi.
@@ -153,11 +188,17 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
       <label htmlFor="masalah-onboarding">Masalahmu</label>
       <textarea
         id="masalah-onboarding"
+        className="scratchpad"
         value={masalah}
         onChange={(e) => setMasalah(e.target.value)}
         placeholder="Misal: tidak tahu harus fokus ke segmen pelanggan yang mana."
-        autoFocus
+        autoFocus={!embedded}
       />
+      {tebakan.length > 0 && (
+        <p className="muted kecil">
+          Tebakan Padi: {tebakan.map((k) => LABEL_KRITERIA[k]).join(', ')}.
+        </p>
+      )}
       <p className="muted kecil">Atau pakai contoh:</p>
       <div>
         {CONTOH_MASALAH.map((c) => (
@@ -171,41 +212,50 @@ export function Onboarding({ ulang = false }: { ulang?: boolean }): React.JSX.El
           </button>
         ))}
       </div>
-      <h2>Apa inti masalah ini?</h2>
-      <p className="muted kecil">
-        Pilih minimal satu. Padi memakai ini untuk mencocokkan framework.
-      </p>
-      <div>
-        {JENIS_MASALAH.map((k) => (
-          <button
-            key={k}
-            type="button"
-            aria-pressed={kriteria.has(k)}
-            className={`chip${kriteria.has(k) ? ' terpilih' : ''}`}
-            onClick={() => toggleKriteria(k)}
-          >
-            {LABEL_KRITERIA[k]}
-          </button>
-        ))}
-      </div>
+      <details className="akordeon-utilitas">
+        <summary>
+          Kriteria tambahan (opsional)
+          {kriteria.size > 0 ? ` — ${kriteria.size} dipilih` : ''}
+        </summary>
+        <div className="isi-akordeon">
+          <p className="muted kecil">
+            Padi sudah menebak kriteria dari teksmu. Centang bila ada yang
+            kurang — yang dicentang ditambahkan ke tebakan.
+          </p>
+          <div>
+            {JENIS_MASALAH.map((k) => (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={kriteria.has(k)}
+                className={`chip${kriteria.has(k) ? ' terpilih' : ''}`}
+                onClick={() => toggleKriteria(k)}
+              >
+                {LABEL_KRITERIA[k]}
+              </button>
+            ))}
+          </div>
+        </div>
+      </details>
       <div className="baris-tombol">
         <button
           className="tombol-utama"
           type="button"
-          disabled={menyimpan || masalah.trim().length === 0 || kriteria.size === 0}
+          disabled={menyimpan || masalah.trim().length === 0}
           onClick={() => void lihatCocok()}
         >
-          {menyimpan ? 'Menyimpan…' : 'Lihat framework yang cocok'}
+          {menyimpan ? 'Menyimpan…' : 'Cari Framework'}
         </button>
-        {ulang ? (
-          <a className="tombol-teks" href="#/progres">
-            Batalkan
-          </a>
-        ) : (
-          <button className="tombol-teks" type="button" onClick={lewati}>
-            Lewati
-          </button>
-        )}
+        {!embedded &&
+          (ulang ? (
+            <a className="tombol-teks" href="#/progres">
+              Batalkan
+            </a>
+          ) : (
+            <button className="tombol-teks" type="button" onClick={lewati}>
+              Lewati
+            </button>
+          ))}
       </div>
     </div>
   );

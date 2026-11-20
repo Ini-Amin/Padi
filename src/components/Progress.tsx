@@ -97,7 +97,7 @@ export function Progress(): React.JSX.Element {
           </div>
         ))}
       </div>
-      <p className="muted kecil">Kotak kuning = ada sesi hari itu.</p>
+      <p className="muted kecil">Kotak hijau = ada sesi hari itu.</p>
 
       <h2>Metrik toolbox</h2>
       <div className="baris-metrik">

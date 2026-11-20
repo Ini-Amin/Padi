@@ -140,11 +140,11 @@ export function bungkusLabel(label: string): string[] {
   return baris;
 }
 
-/** Warna dot status di node (variabel CSS, sadar dark mode). */
+/** Warna dot status di node (variabel CSS). */
 export const WARNA_DOT_STATUS: Record<StatusFramework, string> = {
   belum_dipakai: 'var(--abu)',
   disembunyikan: 'var(--abu)',
-  dipakai: 'var(--kuning-status)',
+  dipakai: 'var(--amber)',
   dikuasai: 'var(--hijau)',
   perlu_reuse: 'var(--oranye)',
 };
@@ -158,13 +158,21 @@ export interface GayaEdge {
 }
 
 /**
- * Gaya garis per tipe edge (variabel CSS, sadar dark mode). Hierarki
- * visual: prasyarat adalah satu-satunya seri yang menonjol (2px, panah);
- * satu_tema paling pendiam (1px) karena informasinya sudah terbaca dari
+ * Gaya garis per tipe edge (variabel CSS). Hierarki visual: prasyarat
+ * adalah satu-satunya seri yang menonjol (2px, panah); satu_tema
+ * paling pendiam (1px) karena informasinya sudah terbaca dari
  * pengelompokan kolom — garisnya hanya konteks, bukan argumen peta.
+ *
+ * Prasyarat memakai putih terang netral (--prasyarat), BUKAN hijau:
+ * aksen mint dicadangkan untuk aksi + status aktif di luar peta, dan
+ * seri utama peta dibedakan oleh bentuk (satu-satunya 2px solid
+ * berpanah) + kecerahan, bukan oleh hue. Keempat tipe tetap
+ * terbedakan: prasyarat putih solid 2px + panah, satu_tema abu
+ * hairline 1px, dipakai_bersama biru putus-putus, kontras merah
+ * titik-titik.
  */
 export const GAYA_EDGE: Record<TipeEdge, GayaEdge> = {
-  prasyarat: { stroke: 'var(--hijau)', dasharray: null, lebar: 2, panah: true },
+  prasyarat: { stroke: 'var(--prasyarat)', dasharray: null, lebar: 2, panah: true },
   satu_tema: { stroke: 'var(--abu-garis)', dasharray: null, lebar: 1, panah: false },
   dipakai_bersama: { stroke: 'var(--biru)', dasharray: '6 3', lebar: 1.5, panah: false },
   kontras: { stroke: 'var(--merah)', dasharray: '3 3', lebar: 1.5, panah: false },

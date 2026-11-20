@@ -10,6 +10,7 @@ import { formatTanggal, hariIni } from '../dates';
 import { reuseJatuhTempo } from '../scheduler';
 import { modelCatchUp } from '../catchup';
 import { Ranking } from './Ranking';
+import { Onboarding } from './Onboarding';
 import { navigasi } from '../App';
 import type { Framework } from '../domain';
 
@@ -121,22 +122,10 @@ export function Home(): React.JSX.Element {
           />
         </>
       ) : (
-        <div className="kartu kartu-utama">
-          <h2>Belum ada masalah aktif</h2>
-          <p>
-            Padi membantumu menyelesaikan masalah nyata dengan framework yang
-            tepat. Mulai dari masalahmu, atau biarkan Padi membantumu
-            menemukannya.
-          </p>
-          <div className="baris-tombol">
-            <a className="tombol-utama" href="#/masalah/baru">
-              Mulai dari masalahmu
-            </a>
-            <a className="tombol-garis" href="#/discovery">
-              Temukan masalah
-            </a>
-          </div>
-        </div>
+        // Belum ada masalah aktif: form entri masalah langsung di Beranda
+        // (Onboarding tertanam), bukan kartu jalan buntu. Setelah simpan,
+        // masalahAktif terisi dan cabang di atas yang tampil.
+        <Onboarding embedded />
       )}
 
       {kelompokCatchUp.length > 0 && (

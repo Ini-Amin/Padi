@@ -169,7 +169,7 @@ export function hitungStatus(ctx: KonteksStatus): StatusFramework {
 export const WARNA_STATUS: Record<StatusFramework, string> = {
   belum_dipakai: 'abu-abu',
   disembunyikan: 'abu-abu',
-  dipakai: 'kuning',
+  dipakai: 'amber',
   dikuasai: 'hijau',
   perlu_reuse: 'oranye',
 };
