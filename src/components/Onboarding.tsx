@@ -239,7 +239,7 @@ export function Onboarding({
       </details>
       <div className="baris-tombol">
         <button
-          className="tombol-utama"
+          className="tombol-utama tombol-hijau"
           type="button"
           disabled={menyimpan || masalah.trim().length === 0}
           onClick={() => void lihatCocok()}

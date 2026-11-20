@@ -239,7 +239,7 @@ export function FrameworkDetail({ id }: { id: string }): React.JSX.Element {
         </p>
         {syaratBaris.map(([ok, teks]) => (
           <div className="baris-legenda" key={teks}>
-            <span className={ok ? 'teks-hijau' : ''}>
+            <span className={ok ? 'teks-terpenuhi' : ''}>
               {ok ? 'Terpenuhi' : 'Belum'}. {teks}
             </span>
           </div>

@@ -12,7 +12,7 @@ import { modelCatchUp } from '../catchup';
 import { Ranking } from './Ranking';
 import { Onboarding } from './Onboarding';
 import { navigasi } from '../App';
-import type { Framework } from '../domain';
+import type { Framework, ISODate } from '../domain';
 
 export function Home(): React.JSX.Element {
   const masalahAktifId = usePadiStore((s) => s.masalahAktifId);
@@ -61,6 +61,7 @@ export function Home(): React.JSX.Element {
   );
   const selesaiHariIni = sesiHariIni.filter((s) => s.selesai).length;
   const draftTerbaru = draft[draft.length - 1];
+  const terakhirDipakai = pemakaianTerakhir(pemakaian, frameworkById);
 
   const mulaiReuse = async (jadwalId: string, frameworkId: string): Promise<void> => {
     const sesi = await mulaiSesi({
@@ -78,106 +79,126 @@ export function Home(): React.JSX.Element {
       <h1>Selamat belajar.</h1>
       <p className="muted">{formatTanggal(hariIni())}</p>
 
-      {draftTerbaru && (
-        <div className="kartu">
-          <p>
-            Lanjutkan penerapan{' '}
-            <strong>{frameworkById.get(draftTerbaru.framework_id)?.nama ?? ''}</strong>
-            {draftTerbaru.masalah_id
-              ? ` untuk "${masalahById.get(draftTerbaru.masalah_id)?.judul ?? ''}"`
-              : ''}
-            .
-          </p>
-          <div className="baris-tombol">
-            <a className="tombol-garis" href={`#/sesi/${draftTerbaru.id}`}>
-              Lanjutkan sesi
-            </a>
-          </div>
-        </div>
-      )}
+      <div className="tata-beranda">
+        <div className="kolom-utama">
+          {masalahAktif ? (
+            <>
+              <div className="kartu kartu-utama">
+                <h2>{masalahAktif.judul}</h2>
+                {masalahAktif.deskripsi && <p className="muted">{masalahAktif.deskripsi}</p>}
+                <p className="kecil">
+                  Framework yang sudah dipakai untuk masalah ini:{' '}
+                  {frameworkUntukMasalah(pemakaian, masalahAktif.id, frameworkById)
+                    .map((f) => f.nama)
+                    .join(', ') ||
+                    'belum ada — sesi yang dimulai tapi belum dinilai tidak dihitung'}
+                </p>
+                <div className="baris-tombol">
+                  <a className="tombol-teks" href="#/masalah">
+                    Lihat semua masalah ({semuaMasalah.length})
+                  </a>
+                </div>
+              </div>
 
-      {masalahAktif ? (
-        <>
-          <div className="kartu kartu-utama">
-            <h2>{masalahAktif.judul}</h2>
-            {masalahAktif.deskripsi && <p className="muted">{masalahAktif.deskripsi}</p>}
-            <p className="kecil">
-              Framework yang sudah dipakai untuk masalah ini:{' '}
-              {frameworkUntukMasalah(pemakaian, masalahAktif.id, frameworkById)
-                .map((f) => f.nama)
-                .join(', ') ||
-                'belum ada — sesi yang dimulai tapi belum dinilai tidak dihitung'}
-            </p>
-            <div className="baris-tombol">
-              <a className="tombol-teks" href="#/masalah">
-                Lihat semua masalah ({semuaMasalah.length})
-              </a>
+              <Ranking
+                masalah={masalahAktif}
+                frameworks={frameworks}
+                dipakaiIds={dipakaiIds}
+              />
+            </>
+          ) : (
+            // Belum ada masalah aktif: form entri masalah langsung di Beranda
+            // (Onboarding tertanam), bukan kartu jalan buntu. Setelah simpan,
+            // masalahAktif terisi dan cabang di atas yang tampil.
+            <Onboarding embedded />
+          )}
+        </div>
+
+        <aside className="kolom-samping">
+          {draftTerbaru && (
+            <div className="kartu">
+              <p>
+                Lanjutkan penerapan{' '}
+                <strong>{frameworkById.get(draftTerbaru.framework_id)?.nama ?? ''}</strong>
+                {draftTerbaru.masalah_id
+                  ? ` untuk "${masalahById.get(draftTerbaru.masalah_id)?.judul ?? ''}"`
+                  : ''}
+                .
+              </p>
+              <div className="baris-tombol">
+                <a className="tombol-garis" href={`#/sesi/${draftTerbaru.id}`}>
+                  Lanjutkan sesi
+                </a>
+              </div>
             </div>
-          </div>
+          )}
 
-          <Ranking
-            masalah={masalahAktif}
-            frameworks={frameworks}
-            dipakaiIds={dipakaiIds}
-          />
-        </>
-      ) : (
-        // Belum ada masalah aktif: form entri masalah langsung di Beranda
-        // (Onboarding tertanam), bukan kartu jalan buntu. Setelah simpan,
-        // masalahAktif terisi dan cabang di atas yang tampil.
-        <Onboarding embedded />
-      )}
+          {kelompokCatchUp.length > 0 && (
+            <div className="kartu kartu-garis">
+              <h2>Re-use terlewat</h2>
+              <p>
+                <strong>{totalTerlewat} re-use</strong> terlewat lebih dari 3 hari,
+                dikelompokkan jadi {kelompokCatchUp.length} sesi catch-up.
+              </p>
+              <div className="baris-tombol">
+                <a className="tombol-garis" href="#/catch-up">
+                  Lihat sesi catch-up
+                </a>
+              </div>
+            </div>
+          )}
 
-      {kelompokCatchUp.length > 0 && (
-        <div className="kartu kartu-garis">
-          <h2>Re-use terlewat</h2>
-          <p>
-            <strong>{totalTerlewat} re-use</strong> terlewat lebih dari 3 hari,
-            dikelompokkan jadi {kelompokCatchUp.length} sesi catch-up.
-          </p>
-          <div className="baris-tombol">
-            <a className="tombol-garis" href="#/catch-up">
-              Lihat sesi catch-up
-            </a>
-          </div>
-        </div>
-      )}
+          {reuseHariIni.length > 0 && (
+            <div className="kartu kartu-garis">
+              <h2>Re-use hari ini</h2>
+              <p className="muted kecil">
+                Re-use: memakai lagi framework yang sudah dipelajari, untuk
+                masalah lain.
+              </p>
+              {reuseHariIni.map((j) => (
+                <div className="baris-daftar" key={j.id}>
+                  <span>
+                    <strong>{frameworkById.get(j.framework_id)?.nama ?? ''}</strong>{' '}
+                    <span className="lencana">{j.jenis_reuse}</span>
+                    <span className="muted kecil">
+                      jatuh tempo {formatTanggal(j.jatuh_tempo)}
+                    </span>
+                  </span>
+                  <button
+                    className="tombol-garis"
+                    type="button"
+                    onClick={() => void mulaiReuse(j.id, j.framework_id)}
+                  >
+                    Re-use (12&prime;)
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-      {reuseHariIni.length > 0 && (
-        <div className="kartu kartu-garis">
-          <h2>Re-use hari ini</h2>
+          {terakhirDipakai.length > 0 && (
+            <div className="kartu kartu-garis">
+              <h2>Terakhir dipakai</h2>
+              {terakhirDipakai.map(({ framework, tanggal }) => (
+                <div className="baris-daftar" key={framework.id}>
+                  <a href={`#/framework/${framework.id}`}>
+                    <strong>{framework.nama}</strong>
+                  </a>
+                  <span className="muted kecil">{formatTanggal(tanggal)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <p className="muted kecil">
-            Re-use: memakai lagi framework yang sudah dipelajari, untuk
-            masalah lain.
+            Hari ini:{' '}
+            {selesaiHariIni === 0
+              ? 'belum ada sesi selesai.'
+              : `${selesaiHariIni} sesi selesai.`}
+            {reuseHariIni.length === 0 && ' Tidak ada pengulangan terjadwal hari ini.'}
           </p>
-          {reuseHariIni.map((j) => (
-            <div className="baris-daftar" key={j.id}>
-              <span>
-                <strong>{frameworkById.get(j.framework_id)?.nama ?? ''}</strong>{' '}
-                <span className="lencana">{j.jenis_reuse}</span>
-                <span className="muted kecil">
-                  jatuh tempo {formatTanggal(j.jatuh_tempo)}
-                </span>
-              </span>
-              <button
-                className="tombol-garis"
-                type="button"
-                onClick={() => void mulaiReuse(j.id, j.framework_id)}
-              >
-                Re-use (12&prime;)
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <p className="muted kecil">
-        Hari ini:{' '}
-        {selesaiHariIni === 0
-          ? 'belum ada sesi selesai.'
-          : `${selesaiHariIni} sesi selesai.`}
-        {reuseHariIni.length === 0 && ' Tidak ada pengulangan terjadwal hari ini.'}
-      </p>
+        </aside>
+      </div>
     </div>
   );
 }
@@ -193,4 +214,30 @@ function frameworkUntukMasalah(
   return [...ids]
     .map((id) => frameworkById.get(id))
     .filter((f): f is Framework => f !== undefined);
+}
+
+/**
+ * Framework yang terakhir dipakai (maks 5, dedup per framework,
+ * tanggal terbaru dulu). Dipakai kartu "Terakhir dipakai" di kolom
+ * samping Beranda; kartu disembunyikan bila pemakaian kosong.
+ */
+function pemakaianTerakhir(
+  pemakaian: Array<{ framework_id: string; tanggal: ISODate }>,
+  frameworkById: ReadonlyMap<string, Framework>,
+): Array<{ framework: Framework; tanggal: ISODate }> {
+  const terbaru = new Map<string, ISODate>();
+  for (const p of pemakaian) {
+    const lama = terbaru.get(p.framework_id);
+    if (lama === undefined || p.tanggal > lama) {
+      terbaru.set(p.framework_id, p.tanggal);
+    }
+  }
+  return [...terbaru.entries()]
+    .map(([frameworkId, tanggal]) => ({
+      framework: frameworkById.get(frameworkId),
+      tanggal,
+    }))
+    .filter((x): x is { framework: Framework; tanggal: ISODate } => x.framework !== undefined)
+    .sort((a, b) => (a.tanggal < b.tanggal ? 1 : a.tanggal > b.tanggal ? -1 : 0))
+    .slice(0, 5);
 }

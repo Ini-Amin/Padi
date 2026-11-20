@@ -1,15 +1,20 @@
 /* Padi: gaya visual (dokumen 04 §2).
- * Dark tactile utility (Linear / instrumen presisi): latar grafit pekat,
- * permukaan kartu selangkah lebih terang, garis 1px tegas, aksen sage
- * mint yang tenang. DARK-ONLY — tidak ada varian terang. Satu keluarga
- * grotesk sistem (Inter/Geist bila terpasang, tanpa webfont), mono
- * untuk label utilitas. Tanpa gradien, tanpa bayangan tebal; hierarki
- * dari ukuran/berat tipografi dan garis. Skala spasi: 4/8/12/16/24/32/
- * 48/64. Skala tipografi: 12/14/16/20/26/48. Tanpa emoji di dalam app.
+ * Dark tactile utility (Linear / instrumen presisi): kanvas obsidian,
+ * permukaan kartu selangkah lebih terang, garis 1px tegas. DARK-ONLY
+ * — tidak ada varian terang. Font dimuat dari Google Fonts (Geist +
+ * JetBrains Mono, display=swap) dengan fallback sistem bila offline.
+ * Tanpa gradien, tanpa bayangan tebal; hierarki dari ukuran/berat
+ * tipografi dan garis. Skala spasi: 4/8/12/16/24/32/48/64. Skala
+ * tipografi: 12/14/16/20/26/36/48. Tanpa emoji di dalam app.
  *
- * Aksen #4ade80 (mint) hanya untuk: aksi utama, status aktif/terpilih,
- * isi bar progres, dan ring fokus. Status framework memakai amber
- * (#fbbf24, "dipakai") agar tetap terbedakan dari aksen. Garis
+ * DISIPLIN HIJAU (v1.5): mint #4ade80 HANYA untuk CTA "Cari
+ * Framework", highlight sesi aktif (isi bar progres timer, border
+ * tahap panduan berjalan, tombol "Lanjutkan"/"Mulai timer", checkbox
+ * checklist sesi), dan dua enkoding data (dot status "dikuasai",
+ * kotak hari berisi sesi di Progres). Semua yang lain netral: tombol
+ * utama PUTIH solid, nav aktif highlight permukaan #1a1d24 + teks
+ * putih, ring fokus putih, seleksi terbalik. Status framework memakai
+ * amber (#fbbf24, "dipakai") agar tetap terbedakan dari aksen. Garis
  * prasyarat di Peta memakai putih terang netral (--prasyarat), bukan
  * hijau: seri utama dibedakan oleh bentuk (2px solid + panah) dan
  * kecerahan, sehingga hijau mint tidak dipakai dua peran sekaligus.
@@ -17,24 +22,30 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0c0d0e;
-  --card: #14171a;
-  --text: #f3f4f6;
+  --bg: #090a0c;
+  --card: #111317;
+  --text: #f9fafb;
+  --tubuh: #d1d5db;
   --muted: #9ca3af;
-  --border: #23272d;
-  --border-kuat: #3a4048;
+  --border: #1e2229;
+  --border-kuat: #2e3540;
+  --border-tombol: #23272d;
+  --garis-chip: #1f242d;
+  --nav-aktif: #1a1d24;
   --accent: #4ade80;
   --accent-kuat: #22c55e;
   --accent-text: #0c0d0e;
   --hijau: #4ade80;
   --oranye: #fb923c;
   --amber: #fbbf24;
+  /* --abu HANYA untuk non-teks (dot status abu-abu, garis SVG peta);
+   * teks redup memakai --muted (7,80:1 terhadap kanvas). */
   --abu: #6b7280;
   --abu-garis: #6b7280;
   --biru: #60a5fa;
   --merah: #f87171;
   --peta-kotak: #1a1e22;
-  --prasyarat: #f3f4f6;
+  --prasyarat: #f9fafb;
   --radius: 8px;
 }
 
@@ -45,10 +56,10 @@
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--text);
-  font-family: Inter, "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--tubuh);
+  font-family: Geist, Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 16px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 a {
@@ -64,10 +75,11 @@ textarea {
 }
 
 h1 {
-  font-size: 1.625rem;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.02em;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--text);
   margin: 0 0 0.5rem;
 }
 
@@ -75,6 +87,7 @@ h2 {
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.015em;
+  color: var(--text);
   margin: 1.5rem 0 0.5rem;
 }
 
@@ -82,6 +95,7 @@ h3 {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  color: var(--text);
   margin: 1.25rem 0 0.4rem;
 }
 
@@ -148,7 +162,7 @@ p {
 /* --- Kerangka --- */
 
 .pembungkus {
-  max-width: 720px;
+  max-width: 1024px;
   margin: 0 auto;
   padding: 0 16px 64px;
 }
@@ -168,11 +182,20 @@ p {
   margin-bottom: 24px;
 }
 
+/* Merek: lencana mono kompak, bukan judul besar — H1 halaman (36px)
+ * adalah hierarki teratas, merek hanya penanda. */
 .merek {
-  font-size: 1.625rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text);
   text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  padding: 6px 10px;
+  white-space: nowrap;
 }
 
 .nav {
@@ -195,11 +218,13 @@ p {
   background: var(--card);
 }
 
+/* Nav aktif: highlight permukaan understated + teks putih — BUKAN
+ * hijau (disiplin hijau v1.5). */
 .nav a.aktif {
-  background: var(--card);
+  background: var(--nav-aktif);
   border: 1px solid var(--border);
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
 }
 
 .kaki {
@@ -238,11 +263,14 @@ p {
 
 /* --- Tombol --- */
 
+/* Tombol utama: putih solid kontras tinggi (teks gelap, ~19:1).
+ * Hijau dicadangkan untuk varian .tombol-hijau — hanya "Cari
+ * Framework" (Onboarding) dan "Mulai timer"/"Lanjutkan" (Sesi). */
 .tombol-utama {
   display: inline-block;
-  background: var(--accent);
-  color: var(--accent-text);
-  border: 1px solid var(--accent);
+  background: var(--text);
+  color: var(--bg);
+  border: 1px solid var(--text);
   border-radius: 8px;
   padding: 12px 24px;
   font-weight: 700;
@@ -252,12 +280,23 @@ p {
 }
 
 .tombol-utama:not(:disabled):hover {
-  background: var(--accent-kuat);
-  border-color: var(--accent-kuat);
+  background: #e5e7eb;
+  border-color: #e5e7eb;
 }
 
 .tombol-utama:not(:disabled):active {
   filter: brightness(0.9);
+}
+
+.tombol-utama.tombol-hijau {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.tombol-utama.tombol-hijau:not(:disabled):hover {
+  background: var(--accent-kuat);
+  border-color: var(--accent-kuat);
 }
 
 .tombol-utama:disabled {
@@ -271,7 +310,7 @@ p {
   display: inline-block;
   background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-tombol);
   border-radius: 8px;
   padding: 12px 16px;
   cursor: pointer;
@@ -339,26 +378,26 @@ textarea {
   resize: vertical;
 }
 
-/* Textarea masalah onboarding: scratchpad fokus — lebih lapang dari
- * textarea biasa, permukaan kartu, border kuat yang menyala aksen
- * saat fokus. */
+/* Textarea masalah onboarding: workbench input — lapang (180px),
+ * permukaan kartu, border netral yang menguat saat fokus + outline
+ * putih global (:focus-visible). Tanpa aksen hijau (disiplin v1.5). */
 .scratchpad {
-  min-height: 140px;
+  min-height: 180px;
   background: var(--card);
-  border: 1px solid var(--border-kuat);
+  border: 1px solid var(--border);
   padding: 16px;
   line-height: 1.6;
 }
 
 .scratchpad:focus-visible {
-  border-color: var(--accent);
+  border-color: var(--border-kuat);
   outline-offset: 0;
 }
 
 .chip {
   display: inline-block;
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--garis-chip);
   border-radius: 999px;
   padding: 12px;
   margin: 0 8px 8px 0;
@@ -372,10 +411,11 @@ textarea {
   background: var(--peta-kotak);
 }
 
-/* Terpilih = garis aksen 2px + tebal. Aksen mint menandai status aktif. */
+/* Terpilih = permukaan terangkat + garis putih 2px + tebal (tanpa
+ * hijau — disiplin v1.5). */
 .chip.terpilih {
-  background: var(--card);
-  border: 2px solid var(--accent);
+  background: var(--peta-kotak);
+  border: 2px solid var(--text);
   color: var(--text);
   font-weight: 700;
 }
@@ -399,8 +439,8 @@ textarea {
 }
 
 .pilihan.terpilih {
-  border-color: var(--accent);
-  outline: 2px solid var(--accent);
+  border-color: var(--text);
+  background: var(--peta-kotak);
   font-weight: 600;
 }
 
@@ -451,10 +491,12 @@ textarea {
   font-weight: 800;
   min-width: 24px;
   text-align: center;
+  color: var(--text);
 }
 
 .nama-framework {
   font-weight: 700;
+  color: var(--text);
 }
 
 .alasan {
@@ -470,7 +512,7 @@ textarea {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border: 1px solid var(--border);
+  border: 1px solid var(--garis-chip);
   border-radius: 4px;
   padding: 2px 8px;
   margin-left: 8px;
@@ -501,8 +543,11 @@ textarea {
   background: var(--oranye);
 }
 
-.teks-hijau {
-  color: var(--hijau);
+/* Status "Terpenuhi" di strip syarat dikuasai: teks putih tebal —
+ * kata + bobot yang membawa makna, bukan warna hijau (disiplin v1.5). */
+.teks-terpenuhi {
+  color: var(--text);
+  font-weight: 700;
 }
 
 /* --- Timer --- */
@@ -511,6 +556,7 @@ textarea {
   font-size: 3rem;
   font-weight: 800;
   letter-spacing: -0.03em;
+  color: var(--text);
   text-align: center;
   margin: 16px 0 4px;
   font-variant-numeric: tabular-nums;
@@ -533,8 +579,8 @@ textarea {
 }
 
 .rubrik.terpilih {
-  border-color: var(--accent);
-  outline: 2px solid var(--accent);
+  border-color: var(--text);
+  background: var(--peta-kotak);
 }
 
 .rubrik .skor {
@@ -552,6 +598,9 @@ textarea {
   min-height: 44px;
 }
 
+/* Checkbox sesi (checklist prosedur + checklist kualitas artefak):
+ * SEMUA pemakaian .cek ada di Session.tsx, jadi hijau di sini adalah
+ * highlight sesi aktif yang dipertahankan (disiplin v1.5). */
 .cek input {
   margin-top: 4px;
   width: 18px;
@@ -570,6 +619,14 @@ textarea {
   border-top: 1px solid var(--border);
 }
 
+/* Tombol di baris daftar tidak menyusut atau membungkus: di kolom
+ * samping Beranda (320px) teks baris yang membungkus, bukan tombol
+ * ("Re-use (12')" sempat pecah jadi 3 baris). */
+.baris-daftar > button {
+  flex: none;
+  white-space: nowrap;
+}
+
 .baris-daftar:first-of-type {
   border-top: none;
 }
@@ -578,7 +635,7 @@ textarea {
   display: inline-block;
   font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--garis-chip);
   border-radius: 4px;
   padding: 2px 8px;
   margin-right: 8px;
@@ -586,8 +643,8 @@ textarea {
 }
 
 .lencana.berkualitas {
-  border-color: var(--hijau);
-  color: var(--hijau);
+  border-color: var(--border-kuat);
+  color: var(--text);
   font-weight: 700;
 }
 
@@ -611,6 +668,7 @@ textarea {
 .baris-metrik .angka {
   font-size: 1.25rem;
   font-weight: 600;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -756,6 +814,7 @@ pre.isi-artefak {
 .judul-tahap {
   font-size: 1rem;
   font-weight: 600;
+  color: var(--text);
 }
 
 /* Checklist langkah prosedur: tanpa bullet, pemisah garis rambut. */
@@ -916,7 +975,7 @@ pre.isi-artefak {
 }
 
 .peta-toggle input {
-  accent-color: var(--accent);
+  accent-color: var(--text);
 }
 
 .peta-svg {
@@ -1010,13 +1069,15 @@ pre.isi-artefak {
 
 /* --- Permukaan browser --- */
 
+/* Seleksi terbalik (putih/gelap, ~19:1) dan ring fokus putih 2px —
+ * tanpa hijau (disiplin v1.5). */
 ::selection {
-  background: var(--accent);
-  color: var(--accent-text);
+  background: var(--text);
+  color: var(--bg);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--text);
   outline-offset: 2px;
 }
 
@@ -1054,6 +1115,24 @@ html {
   }
 }
 
+/* Beranda dua kolom di desktop (≥900px): kolom utama (form masalah /
+ * kartu masalah + ranking) + kolom samping 320px (draft, catch-up,
+ * re-use, terakhir dipakai, ringkasan hari ini). Di bawah 900px satu
+ * kolom: utama dulu, samping setelahnya (mobile tidak berubah
+ * strukturnya, hanya urutan kartu draft yang turun). */
+.tata-beranda {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .tata-beranda {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+  }
+}
+
 /* Di bawah 804px node yang dirender jatuh di bawah target sentuh 44px
  * (lihat hitungan di atas): sembunyikan SVG (legenda hidup di
  * dalamnya), tampilkan catatan bahwa daftar di bawah adalah tampilan
@@ -1073,6 +1152,10 @@ html {
 @media (max-width: 560px) {
   .pembungkus {
     padding-bottom: 110px;
+  }
+
+  h1 {
+    font-size: 2rem;
   }
 
   .kepala {

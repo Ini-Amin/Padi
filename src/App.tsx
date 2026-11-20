@@ -130,7 +130,7 @@ export function App(): React.JSX.Element {
       </button>
       <header className="kepala">
         <a className="merek" href="#/">
-          Padi
+          [PADI] // TOOLBOX
         </a>
         <nav className="nav">
           <a href="#/" className={aktif('beranda')}>

@@ -627,7 +627,7 @@ export function Session({ id, reuseId }: { id: string; reuseId: string | null })
             Jeda
           </button>
         ) : (
-          <button className="tombol-utama" type="button" onClick={() => setBerjalan(true)}>
+          <button className="tombol-utama tombol-hijau" type="button" onClick={() => setBerjalan(true)}>
             {elapsedDetik === 0 ? 'Mulai timer' : 'Lanjutkan'}
           </button>
         )}
